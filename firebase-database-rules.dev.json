@@ -1,0 +1,28 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "games": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "miniGames": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "microGames": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
