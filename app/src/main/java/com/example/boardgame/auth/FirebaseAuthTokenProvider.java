@@ -4,9 +4,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class FirebaseAuthTokenProvider {
+
     public interface TokenCallback {
         void onToken(String idToken);
-
         void onError(Exception exception);
     }
 
@@ -22,9 +22,11 @@ public class FirebaseAuthTokenProvider {
 
     public void requireIdToken(TokenCallback callback) {
         FirebaseUser user = firebaseAuth.getCurrentUser();
+
         if (user == null) {
             firebaseAuth.signInAnonymously()
-                    .addOnSuccessListener(result -> requestIdToken(result.getUser(), callback))
+                    .addOnSuccessListener(result ->
+                            requestIdToken(result.getUser(), callback))
                     .addOnFailureListener(callback::onError);
             return;
         }
@@ -34,11 +36,25 @@ public class FirebaseAuthTokenProvider {
 
     private void requestIdToken(FirebaseUser user, TokenCallback callback) {
         if (user == null) {
-            callback.onError(new IllegalStateException("Firebase user is not signed in"));
+            callback.onError(
+                    new IllegalStateException("Firebase user is not signed in")
+            );
             return;
         }
-        user.getIdToken(false)
-                .addOnSuccessListener(result -> callback.onToken(result.getToken()))
+
+        user.getIdToken(true)
+                .addOnSuccessListener(result -> {
+                    String token = result.getToken();
+
+                    if (token == null || token.isEmpty()) {
+                        callback.onError(
+                                new IllegalStateException("Firebase ID token is null")
+                        );
+                        return;
+                    }
+
+                    callback.onToken(token);
+                })
                 .addOnFailureListener(callback::onError);
     }
 }

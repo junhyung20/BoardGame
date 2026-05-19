@@ -25,6 +25,7 @@ public class BoardGameSocketClient {
     private ScheduledExecutorService heartbeatExecutor;
     private WebSocket webSocket;
     private volatile ConnectionState state = ConnectionState.DISCONNECTED;
+    private volatile boolean manualDisconnect = false;
 
     public BoardGameSocketClient() {
         this(new OkHttpClient());
@@ -38,14 +39,19 @@ public class BoardGameSocketClient {
         this.listener = listener;
     }
 
-    public void connect(String serverUrl) {
+    public synchronized void connect(String serverUrl) {
         if (state == ConnectionState.CONNECTED || state == ConnectionState.CONNECTING) {
             return;
         }
+
+        manualDisconnect = false;
+
         changeState(ConnectionState.CONNECTING);
+
         Request request = new Request.Builder()
                 .url(serverUrl)
                 .build();
+
         webSocket = okHttpClient.newWebSocket(request, new BoardGameWebSocketListener());
     }
 
@@ -54,19 +60,30 @@ public class BoardGameSocketClient {
             notifyError(new IllegalStateException("Socket is not connected"));
             return;
         }
-        webSocket.send(message.toWireText());
+
+        boolean success = webSocket.send(message.toWireText());
+
+        if (!success) {
+            notifyError(new IllegalStateException("Failed to send socket message"));
+        }
     }
 
-    public void disconnect() {
+    public synchronized void disconnect() {
         if (state == ConnectionState.DISCONNECTED) {
             return;
         }
+
+        manualDisconnect = true;
+
         changeState(ConnectionState.CLOSING);
+
         stopHeartbeat();
+
         if (webSocket != null) {
             webSocket.close(NORMAL_CLOSE, "client disconnect");
             webSocket = null;
         }
+
         changeState(ConnectionState.DISCONNECTED);
     }
 
@@ -76,12 +93,14 @@ public class BoardGameSocketClient {
 
     private void startHeartbeat() {
         stopHeartbeat();
+
         heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "boardgame-socket-heartbeat");
             thread.setDaemon(true);
             return thread;
         });
-        heartbeatExecutor.scheduleAtFixedRate(() -> {
+
+        heartbeatExecutor.scheduleWithFixedDelay(() -> {
             if (state == ConnectionState.CONNECTED) {
                 send(SocketMessage.builder(MessageTypes.APP_PING)
                         .requestId(UUID.randomUUID().toString())
@@ -99,7 +118,9 @@ public class BoardGameSocketClient {
 
     private void changeState(ConnectionState newState) {
         state = newState;
+
         SocketEventListener currentListener = listener;
+
         if (currentListener != null) {
             currentListener.onStateChanged(newState);
         }
@@ -107,12 +128,14 @@ public class BoardGameSocketClient {
 
     private void notifyError(Throwable throwable) {
         SocketEventListener currentListener = listener;
+
         if (currentListener != null) {
             currentListener.onError(throwable);
         }
     }
 
     private class BoardGameWebSocketListener extends WebSocketListener {
+
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             changeState(ConnectionState.CONNECTED);
@@ -122,8 +145,18 @@ public class BoardGameSocketClient {
         @Override
         public void onMessage(WebSocket webSocket, String text) {
             SocketEventListener currentListener = listener;
-            if (currentListener != null) {
+
+            if (currentListener == null) {
+                return;
+            }
+
+            try {
                 currentListener.onMessage(SocketMessage.parse(text));
+            } catch (Exception e) {
+                notifyError(new IllegalStateException(
+                        "Failed to parse message: " + text,
+                        e
+                ));
             }
         }
 
@@ -136,16 +169,27 @@ public class BoardGameSocketClient {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             stopHeartbeat();
+
             BoardGameSocketClient.this.webSocket = null;
+
             changeState(ConnectionState.DISCONNECTED);
+
+            if (!manualDisconnect) {
+                notifyError(new IllegalStateException(
+                        "서버 연결이 끊겼습니다. (code=" + code + ")"
+                ));
+            }
         }
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable throwable, Response response) {
             stopHeartbeat();
+
             BoardGameSocketClient.this.webSocket = null;
-            notifyError(throwable);
+
             changeState(ConnectionState.DISCONNECTED);
+
+            notifyError(throwable);
         }
     }
 }
