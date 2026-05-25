@@ -14,6 +14,7 @@ import com.example.boardgame.auth.FirebaseAuthTokenProvider;
 import com.example.boardgame.controller.socket.SocketRoomController;
 import com.example.boardgame.socket.protocol.ConnectionState;
 import com.example.boardgame.socket.protocol.GameSnapshot;
+import com.example.boardgame.socket.protocol.LobbySnapshot;
 import com.example.boardgame.socket.protocol.MessageTypes;
 import com.example.boardgame.socket.protocol.PlayerSnapshot;
 import com.example.boardgame.socket.protocol.RoomSnapshot;
@@ -24,6 +25,13 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuthException;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String EMULATOR_SERVER_URL =
+            "ws://10.0.2.2:8080/game";
+    private static final String LAN_SERVER_URL =
+            "ws://YOUR_LAN_IP:8080/game";
+    private static final String WAN_SERVER_URL =
+            "wss://sandworm-ferret-bath.ngrok-free.dev/game";
+
 
     private final SocketRoomController socketController =
             new SocketRoomController();
@@ -33,10 +41,12 @@ public class MainActivity extends AppCompatActivity {
     private EditText serverUrlInput;
     private EditText nicknameInput;
     private EditText roomCodeInput;
+    private EditText roomPasswordInput;
     private EditText scoreInput;
 
     private TextView connectionStateText;
     private TextView myPlayerText;
+    private TextView serverPresetText;
     private TextView roomStateText;
     private TextView gameStateText;
     private TextView eventLogText;
@@ -93,9 +103,13 @@ public class MainActivity extends AppCompatActivity {
 
         serverUrlInput = findViewById(R.id.serverUrlInput);
 
+        serverUrlInput.setText(EMULATOR_SERVER_URL);
+
         nicknameInput = findViewById(R.id.nicknameInput);
 
         roomCodeInput = findViewById(R.id.roomCodeInput);
+
+        roomPasswordInput = findViewById(R.id.roomPasswordInput);
 
         scoreInput = findViewById(R.id.scoreInput);
 
@@ -104,6 +118,11 @@ public class MainActivity extends AppCompatActivity {
 
         myPlayerText =
                 findViewById(R.id.myPlayerText);
+
+        serverPresetText =
+                findViewById(R.id.serverPresetText);
+
+        renderServerPreset("Default");
 
         roomStateText =
                 findViewById(R.id.roomStateText);
@@ -181,6 +200,27 @@ public class MainActivity extends AppCompatActivity {
 
     private void bindButtons() {
 
+        findViewById(R.id.emulatorServerButton)
+                .setOnClickListener(v ->
+                        selectServerPreset(
+                                "Emulator",
+                                EMULATOR_SERVER_URL
+                        ));
+
+        findViewById(R.id.lanServerButton)
+                .setOnClickListener(v ->
+                        selectServerPreset(
+                                "LAN",
+                                LAN_SERVER_URL
+                        ));
+
+        findViewById(R.id.wanServerButton)
+                .setOnClickListener(v ->
+                        selectServerPreset(
+                                "WAN",
+                                WAN_SERVER_URL
+                        ));
+
         findViewById(R.id.connectButton)
                 .setOnClickListener(v -> {
 
@@ -213,7 +253,8 @@ public class MainActivity extends AppCompatActivity {
                         withIdToken(token ->
                                 socketController.createRoom(
                                         nickname(),
-                                        token
+                                        token,
+                                        roomPassword()
                                 )));
 
         findViewById(R.id.joinRoomButton)
@@ -233,7 +274,8 @@ public class MainActivity extends AppCompatActivity {
                             socketController.joinRoom(
                                     roomCode,
                                     nickname(),
-                                    token
+                                    token,
+                                    roomPassword()
                             ));
                 });
 
@@ -286,10 +328,21 @@ public class MainActivity extends AppCompatActivity {
                         socketController.submitMicroGameScore(
                                 score()
                         ));
+    }
 
-        findViewById(R.id.finishMicroGameButton)
-                .setOnClickListener(v ->
-                        socketController.finishMicroGame());
+    private void selectServerPreset(String label, String serverUrl) {
+
+        serverUrlInput.setText(serverUrl);
+        renderServerPreset(label);
+        appendLog("Server preset: " + label);
+    }
+
+    private void renderServerPreset(String selectedPreset) {
+
+        serverPresetText.setText(
+                "Selected server: " +
+                        selectedPreset
+        );
     }
 
     private void handleSocketMessage(SocketMessage message) {
@@ -338,6 +391,11 @@ public class MainActivity extends AppCompatActivity {
             appendLog(
                     "Request error: " +
                             message.getOrDefault(
+                                    "errorCode",
+                                    ""
+                            ) +
+                            " " +
+                            message.getOrDefault(
                                     "details",
                                     ""
                             )
@@ -345,36 +403,33 @@ public class MainActivity extends AppCompatActivity {
 
             socketController.onRollResponseReceived();
 
+        } else if (MessageTypes.SERVER_HELLO.equals(message.getType())) {
+
+            appendLog(
+                    "Server " +
+                            message.getOrDefault("authMode", "") +
+                            " / " +
+                            message.getOrDefault("network", "") +
+                            " / protocol " +
+                            message.getOrDefault("protocolVersion", "")
+            );
+
         } else if (MessageTypes.ROOM_UPDATED.equals(message.getType())) {
 
             renderRoom(
                     SnapshotMessageMapper.toRoomSnapshot(message)
             );
 
+        } else if (MessageTypes.LOBBY_UPDATED.equals(message.getType())) {
+
+            renderLobby(
+                    SnapshotMessageMapper.toLobbySnapshot(message)
+            );
+
         } else if (MessageTypes.GAME_UPDATED.equals(message.getType())) {
 
             renderGame(
                     SnapshotMessageMapper.toGameSnapshot(message)
-            );
-
-        } else if (MessageTypes.MINI_GAME_UPDATED.equals(message.getType())) {
-
-            appendLog(
-                    "미니게임 업데이트: " +
-                            message.getOrDefault(
-                                    "status",
-                                    ""
-                            )
-            );
-
-        } else if (MessageTypes.MICRO_GAME_UPDATED.equals(message.getType())) {
-
-            appendLog(
-                    "마이크로게임 업데이트: " +
-                            message.getOrDefault(
-                                    "status",
-                                    ""
-                            )
             );
 
         } else if (MessageTypes.SERVER_NOTICE.equals(message.getType())) {
@@ -393,6 +448,26 @@ public class MainActivity extends AppCompatActivity {
                     "Message: " + message.getType()
             );
         }
+    }
+
+    private void renderLobby(LobbySnapshot lobby) {
+
+        StringBuilder builder = new StringBuilder("Lobby");
+
+        for (LobbySnapshot.RoomListInfo room : lobby.getRooms()) {
+
+            builder.append("\n")
+                    .append(room.hasPassword() ? "[locked] " : "")
+                    .append(room.getCode())
+                    .append(" / ")
+                    .append(room.getStatus())
+                    .append(" / players=")
+                    .append(room.getPlayerCount())
+                    .append(" / host=")
+                    .append(room.getHostNickname());
+        }
+
+        roomStateText.setText(builder.toString());
     }
 
     private void renderRoom(RoomSnapshot room) {
@@ -476,6 +551,10 @@ public class MainActivity extends AppCompatActivity {
         return nickname.isEmpty()
                 ? "Player"
                 : nickname;
+    }
+
+    private String roomPassword() {
+        return textOf(roomPasswordInput);
     }
 
     private int score() {

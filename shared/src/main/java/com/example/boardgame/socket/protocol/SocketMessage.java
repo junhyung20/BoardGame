@@ -162,6 +162,10 @@ public class SocketMessage {
             return put(key, new JsonPrimitive(value));
         }
 
+        public Builder put(String key, long value) {
+            return put(key, new JsonPrimitive(value));
+        }
+
         public Builder put(String key, boolean value) {
             return put(key, new JsonPrimitive(value));
         }

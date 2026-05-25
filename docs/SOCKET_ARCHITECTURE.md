@@ -150,10 +150,16 @@ Gameplay state should still remain on the socket server.
 
 ## WAN Requirements
 
-Before real WAN multiplayer:
+Temporary WAN smoke testing:
+
+- Run the local server behind ngrok.
+- Connect Android with `wss://<ngrok-domain>/game`.
+- See `docs/WAN_NGROK_GUIDE.md`.
+
+Before real production WAN multiplayer:
 
 - Manually verify Firebase Admin credentials and signed-in clients.
-- Use `wss://`.
+- Use `wss://` through a stable domain or deployment target.
 - Add reconnect and session resume.
 - Add heartbeat timeout detection.
 - Add room cleanup after inactivity.

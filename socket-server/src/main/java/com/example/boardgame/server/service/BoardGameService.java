@@ -26,9 +26,15 @@ public class BoardGameService {
 
     private final SecureRandom random = new SecureRandom();
 
-    public void startGame(Room room) {
-        if (!room.canStart(2)) {
-            throw new IllegalStateException("At least enough ready players are required to start");
+    public void startGame(Room room, int minPlayers) {
+        if (!Room.WAITING.equals(room.getStatus()) && !Room.READY.equals(room.getStatus())) {
+            throw new IllegalStateException("Game has already started");
+        }
+        if (room.getGameState() != null) {
+            throw new IllegalStateException("Game has already started");
+        }
+        if (!room.canStart(minPlayers)) {
+            throw new IllegalStateException("At least " + minPlayers + " ready player(s) are required to start");
         }
 
         GameState gameState = new GameState(room.getCode(), FINAL_ROUND);
@@ -37,6 +43,7 @@ public class BoardGameService {
             turnOrder.add(player.getId());
         }
         gameState.setTurnOrder(turnOrder);
+        gameState.setLastSystemMessage("Game started.");
         room.setGameState(gameState);
         room.setStatus(Room.IN_GAME);
     }
@@ -53,7 +60,8 @@ public class BoardGameService {
         player.addScore(diceRoll);
 
         gameState.setLastDiceRoll(diceRoll);
-        gameState.setTurnPhase(GameState.TILE_EFFECT_APPLIED);
+        gameState.transitionTo(GameState.WAITING_FOR_TILE_EFFECT);
+        gameState.setLastSystemMessage(player.getNickname() + " rolled " + diceRoll + ".");
         room.touch();
 
         return diceRoll;
@@ -62,7 +70,7 @@ public class BoardGameService {
     public String applyTileEffect(Room room, String playerId) {
         GameState gameState = requireGameState(room);
         requireCurrentPlayer(gameState, playerId);
-        requirePhase(gameState, GameState.TILE_EFFECT_APPLIED);
+        requirePhase(gameState, GameState.WAITING_FOR_TILE_EFFECT);
 
         Player player = requirePlayer(room, playerId);
         String tileType = getTileType(player.getPosition());
@@ -70,34 +78,44 @@ public class BoardGameService {
         switch (tileType) {
             case TILE_START:
                 player.addScore(5);
+                gameState.setLastSystemMessage(player.getNickname() + " gained 5 points on START.");
                 gameState.advanceTurn();
                 break;
             case TILE_PLUS_SCORE:
                 player.addScore(3);
+                gameState.setLastSystemMessage(player.getNickname() + " gained 3 points.");
                 gameState.advanceTurn();
                 break;
             case TILE_MINUS_SCORE:
                 if (player.hasItemCard(CARD_DEFENSE)) {
                     player.useItemCard(CARD_DEFENSE);
+                    gameState.setLastSystemMessage(player.getNickname() + " used a defense card.");
                 } else {
                     player.addScore(-3);
+                    gameState.setLastSystemMessage(player.getNickname() + " lost 3 points.");
                 }
                 gameState.advanceTurn();
                 break;
             case TILE_CARD:
-                player.addItemCard(CARD_DEFENSE);
+                if (player.addItemCard(CARD_DEFENSE)) {
+                    gameState.setLastSystemMessage(player.getNickname() + " gained a defense card.");
+                } else {
+                    gameState.setLastSystemMessage(player.getNickname() + " already has a card.");
+                }
                 gameState.advanceTurn();
                 break;
             case TILE_QUESTION:
                 int randomScore = random.nextBoolean() ? 5 : -5;
                 player.addScore(randomScore);
+                gameState.setLastSystemMessage(player.getNickname() + " question result: " + randomScore + " points.");
                 gameState.advanceTurn();
                 break;
             case TILE_AD:
-                player.setInMicroGame(true);
-                gameState.setTurnPhase(GameState.WAITING_FOR_MICRO_GAME);
+                gameState.setLastSystemMessage(player.getNickname() + " started a micro game.");
+                gameState.transitionTo(GameState.WAITING_FOR_MICRO_GAME);
                 break;
             default:
+                gameState.setLastSystemMessage(player.getNickname() + " landed on a normal tile.");
                 gameState.advanceTurn();
                 break;
         }

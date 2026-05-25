@@ -8,12 +8,16 @@ import java.util.List;
 
 public class GameState {
 
-    // --- 턴 페이즈 (Turn Phase) 상수 정의 ---
-    public static final String WAITING_FOR_ROLL = "WAITING_FOR_ROLL";           // 주사위 굴리기 대기 중
-    public static final String TILE_EFFECT_APPLIED = "TILE_EFFECT_APPLIED";     // 이동 후 타일 효과 적용됨
-    public static final String WAITING_FOR_MICRO_GAME = "WAITING_FOR_MICRO_GAME"; // 광고 칸 등 개별 타일 게임 진행 중
-    public static final String MINI_GAME_PHASE = "MINI_GAME_PHASE";             // 라운드 종료 후 전체 미니게임 진행 중
-    public static final String FINISHED = "FINISHED";                           // 3라운드 종료 및 최종 결과 산출
+    public static final String WAITING_FOR_ROLL = "WAITING_FOR_ROLL";
+    public static final String WAITING_FOR_TILE_EFFECT = "WAITING_FOR_TILE_EFFECT";
+    public static final String WAITING_FOR_MICRO_GAME = "WAITING_FOR_MICRO_GAME";
+    public static final String WAITING_FOR_MINI_GAME = "WAITING_FOR_MINI_GAME";
+    public static final String MINI_GAME_RUNNING = "MINI_GAME_RUNNING";
+    public static final String FINISHED = "FINISHED";
+
+    // Compatibility aliases for older callers/tests during the protocol cleanup.
+    public static final String TILE_EFFECT_APPLIED = WAITING_FOR_TILE_EFFECT;
+    public static final String MINI_GAME_PHASE = MINI_GAME_RUNNING;
 
     private final String roomCode;
     private final int finalRound; // 기획서 기준 3
@@ -55,21 +59,88 @@ public class GameState {
 
         if (currentPlayerIndex == turnOrder.size() - 1) {
             currentPlayerIndex = 0;
-            turnPhase = MINI_GAME_PHASE; // 라운드 끝 -> 미니게임
+            transitionTo(WAITING_FOR_MINI_GAME);
         } else {
             currentPlayerIndex++;
-            turnPhase = WAITING_FOR_ROLL; // 다음 사람 턴
+            transitionTo(WAITING_FOR_ROLL);
         }
     }
 
     public void advanceRound() {
         currentRound++;
         if (currentRound > finalRound) {
-            turnPhase = FINISHED;
+            transitionTo(FINISHED);
         } else {
             currentPlayerIndex = 0;
-            turnPhase = WAITING_FOR_ROLL;
+            transitionTo(WAITING_FOR_ROLL);
         }
+    }
+
+    public void removePlayer(String playerId) {
+        int removedIndex = turnOrder.indexOf(playerId);
+        if (removedIndex < 0) {
+            return;
+        }
+
+        boolean removedCurrentPlayer = removedIndex == currentPlayerIndex;
+        turnOrder.remove(removedIndex);
+
+        if (turnOrder.isEmpty()) {
+            currentPlayerIndex = 0;
+            transitionTo(FINISHED);
+            return;
+        }
+
+        if (removedIndex < currentPlayerIndex) {
+            currentPlayerIndex--;
+        } else if (currentPlayerIndex >= turnOrder.size()) {
+            currentPlayerIndex = 0;
+        }
+
+        if (removedCurrentPlayer
+                && !WAITING_FOR_MINI_GAME.equals(turnPhase)
+                && !MINI_GAME_RUNNING.equals(turnPhase)
+                && !FINISHED.equals(turnPhase)) {
+            lastDiceRoll = 0;
+            transitionTo(WAITING_FOR_ROLL);
+            lastSystemMessage = "A player left. Turn skipped.";
+        }
+    }
+
+    public void transitionTo(String nextPhase) {
+        if (!isKnownPhase(nextPhase)) {
+            throw new IllegalArgumentException("Unknown game phase: " + nextPhase);
+        }
+        if (!canTransition(turnPhase, nextPhase)) {
+            throw new IllegalStateException("Cannot transition from " + turnPhase + " to " + nextPhase);
+        }
+        turnPhase = nextPhase;
+    }
+
+    private boolean canTransition(String currentPhase, String nextPhase) {
+        if (currentPhase.equals(nextPhase) || FINISHED.equals(nextPhase)) {
+            return true;
+        }
+        return switch (currentPhase) {
+            case WAITING_FOR_ROLL -> WAITING_FOR_TILE_EFFECT.equals(nextPhase);
+            case WAITING_FOR_TILE_EFFECT -> WAITING_FOR_ROLL.equals(nextPhase)
+                    || WAITING_FOR_MICRO_GAME.equals(nextPhase)
+                    || WAITING_FOR_MINI_GAME.equals(nextPhase);
+            case WAITING_FOR_MICRO_GAME -> WAITING_FOR_ROLL.equals(nextPhase)
+                    || WAITING_FOR_MINI_GAME.equals(nextPhase);
+            case WAITING_FOR_MINI_GAME -> MINI_GAME_RUNNING.equals(nextPhase);
+            case MINI_GAME_RUNNING -> WAITING_FOR_ROLL.equals(nextPhase);
+            default -> false;
+        };
+    }
+
+    private boolean isKnownPhase(String phase) {
+        return WAITING_FOR_ROLL.equals(phase)
+                || WAITING_FOR_TILE_EFFECT.equals(phase)
+                || WAITING_FOR_MICRO_GAME.equals(phase)
+                || WAITING_FOR_MINI_GAME.equals(phase)
+                || MINI_GAME_RUNNING.equals(phase)
+                || FINISHED.equals(phase);
     }
 
     public GameSnapshot toSnapshot() {
@@ -95,7 +166,7 @@ public class GameState {
     public void setLastDiceRoll(int lastDiceRoll) { this.lastDiceRoll = lastDiceRoll; }
 
     public String getTurnPhase() { return turnPhase; }
-    public void setTurnPhase(String turnPhase) { this.turnPhase = turnPhase; }
+    public void setTurnPhase(String turnPhase) { transitionTo(turnPhase); }
 
     public List<String> getTurnOrder() { return Collections.unmodifiableList(turnOrder); }
 

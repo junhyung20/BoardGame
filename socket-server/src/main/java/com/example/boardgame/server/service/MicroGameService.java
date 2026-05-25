@@ -2,65 +2,75 @@ package com.example.boardgame.server.service;
 
 import com.example.boardgame.server.model.GameState;
 import com.example.boardgame.server.model.MicroGameState;
+import com.example.boardgame.server.model.Player;
 import com.example.boardgame.server.model.Room;
-
-import java.util.Map;
-import java.util.UUID;
 
 public class MicroGameService {
     public static final int MICRO_GAME_DURATION_MILLIS = 10_000;
-    public static final int[] MICRO_GAME_SCORE_BY_RANK = {8, 5, 3, 1};
+    public static final int SUBMISSION_GRACE_MILLIS = 2_000;
+    public static final int MAX_SUBMITTED_SCORE = 1_000_000;
 
     private final BoardGameService boardGameService;
-    private final ScoreService scoreService;
 
-    public MicroGameService(BoardGameService boardGameService, ScoreService scoreService) {
+    public MicroGameService(BoardGameService boardGameService) {
         this.boardGameService = boardGameService;
-        this.scoreService = scoreService;
     }
 
-    public MicroGameState startMicroGame(Room room, String triggerPlayerId, String type) {
-        boardGameService.requirePlayer(room, triggerPlayerId);
+    public void startMicroGame(Room room, String playerId) {
         GameState gameState = boardGameService.requireGameState(room);
-        
-        // ⚠️ [수정] GameState에 정의된 정확한 상수명으로 변경
-        boardGameService.requirePhase(gameState, GameState.TILE_EFFECT_APPLIED);
+        boardGameService.requirePhase(gameState, GameState.WAITING_FOR_MICRO_GAME);
+        if (!playerId.equals(gameState.getCurrentPlayerId())) {
+            throw new IllegalStateException("It is not your turn");
+        }
+        if (room.getMicroGameState() != null) {
+            throw new IllegalStateException("Micro game has already started");
+        }
 
-        MicroGameState microGameState = new MicroGameState(
-                UUID.randomUUID().toString(),
-                emptyToDefault(type, "QUICK_TAP"),
-                triggerPlayerId,
+        Player player = boardGameService.requirePlayer(room, playerId);
+        room.setMicroGameState(new MicroGameState(
+                playerId,
                 System.currentTimeMillis(),
-                MICRO_GAME_DURATION_MILLIS
-        );
-        room.setMicroGameState(microGameState);
-        
-        // ⚠️ [수정] GameState에 정의된 정확한 상수명으로 변경
-        gameState.setTurnPhase(GameState.WAITING_FOR_MICRO_GAME);
-        
+                MICRO_GAME_DURATION_MILLIS,
+                SUBMISSION_GRACE_MILLIS
+        ));
+        player.setInMicroGame(true);
+        gameState.setLastSystemMessage(player.getNickname() + " is playing a micro game.");
         room.touch();
-        return microGameState;
     }
 
     public void submitMicroGameScore(Room room, String playerId, int score) {
-        boardGameService.requirePlayer(room, playerId);
-        requireMicroGame(room).submitScore(playerId, score);
+        requireSubmittedScore(score);
+        GameState gameState = boardGameService.requireGameState(room);
+        boardGameService.requirePhase(gameState, GameState.WAITING_FOR_MICRO_GAME);
+        if (!playerId.equals(gameState.getCurrentPlayerId())) {
+            throw new IllegalStateException("It is not your turn");
+        }
+
+        Player player = boardGameService.requirePlayer(room, playerId);
+        if (!player.isInMicroGame()) {
+            throw new IllegalStateException("Player is not in a micro game");
+        }
+        MicroGameState microGameState = requireMicroGame(room);
+        microGameState.requirePlayer(playerId);
+
+        if (!microGameState.isSubmissionClosed()) {
+            microGameState.markSubmitted();
+            player.addScore(score);
+            gameState.setLastSystemMessage(player.getNickname() + " finished the micro game for " + score + " points.");
+        } else {
+            gameState.setLastSystemMessage(player.getNickname() + " missed the micro game deadline.");
+        }
+
+        player.setInMicroGame(false);
+        room.setMicroGameState(null);
+        gameState.advanceTurn();
         room.touch();
     }
 
-    public Map<String, Integer> finishMicroGame(Room room) {
-        MicroGameState microGameState = requireMicroGame(room);
-        microGameState.setStatus(MicroGameState.FINISHED);
-        Map<String, Integer> rewards = scoreService.rankScores(
-                microGameState.getScoresByPlayerId(),
-                MICRO_GAME_SCORE_BY_RANK
-        );
-        scoreService.applyRewards(room, rewards);
-        
-        // 마이크로 게임 종료 후 다음 턴으로 진행
-        boardGameService.requireGameState(room).advanceTurn();
-        room.touch();
-        return rewards;
+    private void requireSubmittedScore(int score) {
+        if (score < 0 || score > MAX_SUBMITTED_SCORE) {
+            throw new IllegalArgumentException("Submitted score is out of range");
+        }
     }
 
     private MicroGameState requireMicroGame(Room room) {
@@ -69,9 +79,5 @@ public class MicroGameService {
             throw new IllegalStateException("Micro game has not started");
         }
         return microGameState;
-    }
-
-    private String emptyToDefault(String value, String defaultValue) {
-        return value == null || value.trim().isEmpty() ? defaultValue : value.trim();
     }
 }

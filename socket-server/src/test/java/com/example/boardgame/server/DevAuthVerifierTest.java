@@ -9,13 +9,14 @@ public class DevAuthVerifierTest {
     public void verifyUsesTokenAsUidWhenProvided() {
         DevAuthVerifier verifier = new DevAuthVerifier();
 
-        assertEquals("dev-user-1", verifier.verify(" dev-user-1 ", "connection-1"));
+        assertEquals("dev-user-1", verifier.verify(" dev-user-1 "));
     }
 
     @Test
-    public void verifyFallsBackToConnectionUidWhenTokenIsMissing() {
+    public void verifyCreatesDevUidWhenTokenIsMissing() {
         DevAuthVerifier verifier = new DevAuthVerifier();
 
-        assertEquals("dev-connection-1", verifier.verify("", "connection-1"));
+        assertEquals("dev-1", verifier.verify(""));
+        assertEquals("dev-2", verifier.verify(null));
     }
 }

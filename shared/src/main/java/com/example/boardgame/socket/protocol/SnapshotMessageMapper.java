@@ -6,15 +6,12 @@ import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public final class SnapshotMessageMapper {
     private static final String FIELD_ROOM = "room";
     private static final String FIELD_GAME = "game";
-    private static final String FIELD_MINI_GAME = "miniGame";
-    private static final String FIELD_MICRO_GAME = "microGame";
+    private static final String FIELD_LOBBY = "lobby";
 
     private SnapshotMessageMapper() {
     }
@@ -31,15 +28,9 @@ public final class SnapshotMessageMapper {
                 .build();
     }
 
-    public static SocketMessage miniGameUpdated(MiniGameSnapshot snapshot) {
-        return SocketMessage.builder(MessageTypes.MINI_GAME_UPDATED)
-                .put(FIELD_MINI_GAME, toJson(snapshot))
-                .build();
-    }
-
-    public static SocketMessage microGameUpdated(MicroGameSnapshot snapshot) {
-        return SocketMessage.builder(MessageTypes.MICRO_GAME_UPDATED)
-                .put(FIELD_MICRO_GAME, toJson(snapshot))
+    public static SocketMessage lobbyUpdated(LobbySnapshot snapshot) {
+        return SocketMessage.builder(MessageTypes.LOBBY_UPDATED)
+                .put(FIELD_LOBBY, toJson(snapshot))
                 .build();
     }
 
@@ -67,26 +58,10 @@ public final class SnapshotMessageMapper {
         );
     }
 
-    public static MiniGameSnapshot toMiniGameSnapshot(SocketMessage message) {
-        JsonObject json = message.getObject(FIELD_MINI_GAME);
-        return new MiniGameSnapshot(
-                string(json, "id"),
-                string(json, "type"),
-                string(json, "status"),
-                integer(json, "remainingTime", 0),
-                scores(json.get("scores"))
-        );
-    }
-
-    public static MicroGameSnapshot toMicroGameSnapshot(SocketMessage message) {
-        JsonObject json = message.getObject(FIELD_MICRO_GAME);
-        return new MicroGameSnapshot(
-                string(json, "id"),
-                string(json, "type"),
-                string(json, "triggerPlayerId"),
-                string(json, "status"),
-                integer(json, "remainingTime", 0),
-                scores(json.get("scores"))
+    public static LobbySnapshot toLobbySnapshot(SocketMessage message) {
+        JsonObject lobby = message.getObject(FIELD_LOBBY);
+        return new LobbySnapshot(
+                rooms(lobby.get("rooms"))
         );
     }
 
@@ -102,6 +77,27 @@ public final class SnapshotMessageMapper {
         }
         room.add("players", players);
         return room;
+    }
+
+    private static JsonObject toJson(LobbySnapshot snapshot) {
+        JsonObject lobby = new JsonObject();
+        JsonArray rooms = new JsonArray();
+        for (LobbySnapshot.RoomListInfo roomListInfo: snapshot.getRooms()) {
+            rooms.add(toJson(roomListInfo));
+        }
+        lobby.add("rooms", rooms);
+        return lobby;
+    }
+
+    private static JsonObject toJson(LobbySnapshot.RoomListInfo snapshot) {
+        JsonObject roomListInfo = new JsonObject();
+        roomListInfo.addProperty("code", snapshot.getCode());
+        roomListInfo.addProperty("status", snapshot.getStatus());
+        roomListInfo.addProperty("playerCount", snapshot.getPlayerCount());
+        roomListInfo.addProperty("hostNickname", snapshot.getHostNickname());
+        roomListInfo.addProperty("hasPassword", snapshot.hasPassword());
+
+        return roomListInfo;
     }
 
     private static JsonObject toJson(PlayerSnapshot snapshot) {
@@ -142,47 +138,6 @@ public final class SnapshotMessageMapper {
         return game;
     }
 
-    private static JsonObject toJson(MiniGameSnapshot snapshot) {
-        JsonObject json = new JsonObject();
-        json.addProperty("id", snapshot.getId());
-        json.addProperty("type", snapshot.getType());
-        json.addProperty("status", snapshot.getStatus());
-        json.addProperty("remainingTime", snapshot.getRemainingTime());
-        json.add("scores", toJson(snapshot.getScores()));
-        return json;
-    }
-
-    private static JsonObject toJson(MicroGameSnapshot snapshot) {
-        JsonObject json = new JsonObject();
-        json.addProperty("id", snapshot.getId());
-        json.addProperty("type", snapshot.getType());
-        json.addProperty("triggerPlayerId", snapshot.getTriggerPlayerId());
-        json.addProperty("status", snapshot.getStatus());
-        json.addProperty("remainingTime", snapshot.getRemainingTime());
-        json.add("scores", toJson(snapshot.getScores()));
-        return json;
-    }
-
-    private static JsonObject toJson(Map<String, Integer> scores) {
-        JsonObject json = new JsonObject();
-        for (Map.Entry<String, Integer> entry : scores.entrySet()) {
-            json.addProperty(entry.getKey(), entry.getValue());
-        }
-        return json;
-    }
-
-    private static Map<String, Integer> scores(JsonElement element) {
-        if (element == null || !element.isJsonObject()) {
-            return Collections.emptyMap();
-        }
-        Map<String, Integer> scores = new HashMap<>();
-        JsonObject object = element.getAsJsonObject();
-        for (String key : object.keySet()) {
-            scores.put(key, object.get(key).getAsInt());
-        }
-        return scores;
-    }
-
     private static List<PlayerSnapshot> players(JsonElement element) {
         if (element == null || !element.isJsonArray()) {
             return Collections.emptyList();
@@ -205,6 +160,27 @@ public final class SnapshotMessageMapper {
             ));
         }
         return players;
+    }
+
+    private static List<LobbySnapshot.RoomListInfo> rooms(JsonElement element) {
+        if (element == null || !element.isJsonArray()) {
+            return Collections.emptyList();
+        }
+        List<LobbySnapshot.RoomListInfo> rooms = new ArrayList<>();
+        for (JsonElement roomElement : element.getAsJsonArray()) {
+            if (!roomElement.isJsonObject()) {
+                continue;
+            }
+            JsonObject room = roomElement.getAsJsonObject();
+            rooms.add(new LobbySnapshot.RoomListInfo(
+                    string(room, "code"),
+                    string(room, "status"),
+                    integer(room, "playerCount", 0),
+                    string(room, "hostNickname"),
+                    bool(room, "hasPassword", false)
+            ));
+        }
+        return rooms;
     }
 
     private static List<String> strings(JsonElement element) {

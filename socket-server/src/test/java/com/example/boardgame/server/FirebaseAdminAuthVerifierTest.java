@@ -10,7 +10,7 @@ public class FirebaseAdminAuthVerifierTest {
     public void verifyReturnsUidForValidToken() {
         FirebaseAdminAuthVerifier verifier = new FirebaseAdminAuthVerifier(token -> "uid-1");
 
-        assertEquals("uid-1", verifier.verify("valid-token", "connection-1"));
+        assertEquals("uid-1", verifier.verify("valid-token"));
     }
 
     @Test
@@ -18,7 +18,7 @@ public class FirebaseAdminAuthVerifierTest {
         FirebaseAdminAuthVerifier verifier = new FirebaseAdminAuthVerifier(token -> "uid-1");
 
         try {
-            verifier.verify("", "connection-1");
+            verifier.verify("");
             fail("Expected missing token to be rejected");
         } catch (AuthException expected) {
             assertEquals("Missing Firebase ID token", expected.getMessage());
@@ -32,7 +32,7 @@ public class FirebaseAdminAuthVerifierTest {
         });
 
         try {
-            verifier.verify("invalid-token", "connection-1");
+            verifier.verify("invalid-token");
             fail("Expected invalid token to be rejected");
         } catch (AuthException expected) {
             assertEquals("Invalid Firebase ID token", expected.getMessage());

@@ -1,19 +1,24 @@
 package com.example.boardgame.server.service;
 
+import com.example.boardgame.server.model.GameState;
+import com.example.boardgame.server.model.MicroGameState;
+import com.example.boardgame.server.model.MiniGameState;
 import com.example.boardgame.server.model.Player;
 import com.example.boardgame.server.model.Room;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RoomService {
-    //  보드게임은 혼자 할 수 없으므로 최소 인원을 2명으로 변경했습니다.
-    // (만약 혼자서 UI 테스트를 해야 한다면 임시로 1로 낮춰서 테스트하세요.)
-    public static final int MIN_PLAYERS = 2;
+    // Use 1 for local UI testing. Raise to 2 when solo starts should be disallowed.
+    public static final int MIN_PLAYERS = 1;
     public static final int MAX_PLAYERS = 4;
 
     public static class MatchResult {
@@ -32,44 +37,66 @@ public class RoomService {
     private final Map<String, Room> rooms = new ConcurrentHashMap<>();
     private final SecureRandom random = new SecureRandom();
 
+    public List<Room> getLobbyRooms() {
+        List<Room> lobbyRooms = new ArrayList<>();
+        for (Room room: rooms.values()) {
+            if (isJoinable(room)) {
+                lobbyRooms.add(room);
+            }
+        }
+        lobbyRooms.sort(Comparator.comparingLong(Room::getCreatedAtMillis));
+        return lobbyRooms;
+    }
+
     public synchronized Room createRoom(String firebaseUid, String nickname) {
+        return createRoom(firebaseUid, nickname, "");
+    }
+
+    public synchronized Room createRoom(String firebaseUid, String nickname, String roomPassword) {
         requireUidAvailable(firebaseUid); // 중복 로그인 방지
         Room room = new Room(createUniqueRoomCode());
+        room.setPassword(roomPassword);
         room.addPlayer(createPlayer(firebaseUid, nickname));
         rooms.put(room.getCode(), room);
         return room;
     }
 
     public synchronized Player joinRoom(String roomCode, String firebaseUid, String nickname) {
+        return joinRoom(roomCode, firebaseUid, nickname, "");
+    }
+
+    public synchronized Player joinRoom(String roomCode, String firebaseUid, String nickname, String roomPassword) {
         requireUidAvailable(firebaseUid);
         Room room = requireRoom(roomCode);
 
         // 이미 게임이 시작되었거나 끝난 방에는 난입 불가
-        if (!Room.WAITING.equals(room.getStatus()) && !Room.READY.equals(room.getStatus())) {
+        if (!isWaitingOrReady(room)) {
             throw new IllegalStateException("Room is already in game");
         }
         if (room.getPlayers().size() >= MAX_PLAYERS) {
             throw new IllegalStateException("Room is full");
         }
+        if (!room.passwordMatches(roomPassword)) {
+            throw new IllegalArgumentException("Invalid room password");
+        }
 
         Player player = createPlayer(firebaseUid, nickname);
         room.addPlayer(player);
-        room.refreshReadyStatus(MIN_PLAYERS); // 2명 이상이고 모두 Ready면 READY 상태로 전환
+        room.refreshReadyStatus(MIN_PLAYERS);
         return player;
     }
 
     public synchronized MatchResult matchmake(String firebaseUid, String nickname) {
         // 빈자리가 있는 대기방 자동 탐색
         for (Room room : rooms.values()) {
-            if ((Room.WAITING.equals(room.getStatus()) || Room.READY.equals(room.getStatus()))
-                    && room.getPlayers().size() < MAX_PLAYERS) {
+            if (isJoinable(room) && !room.hasPassword()) {
                 Player player = joinRoom(room.getCode(), firebaseUid, nickname);
                 return new MatchResult(room, player);
             }
         }
 
         // 빈 방이 없으면 내가 새로 방을 팜
-        Room room = createRoom(firebaseUid, nickname);
+        Room room = createRoom(firebaseUid, nickname, "");
         Player player = room.getPlayerList().iterator().next();
         return new MatchResult(room, player);
     }
@@ -87,19 +114,43 @@ public class RoomService {
             return;
         }
 
+        GameState gameState = room.getGameState();
+        MiniGameState miniGameState = room.getMiniGameState();
+        if (miniGameState != null) {
+            miniGameState.removeScore(playerId);
+        }
+        MicroGameState microGameState = room.getMicroGameState();
+        if (microGameState != null && microGameState.isForPlayer(playerId)) {
+            room.setMicroGameState(null);
+        }
+
         room.removePlayer(playerId);
 
         if (room.getPlayers().isEmpty()) {
             // 방에 아무도 안 남으면 방 폭파
             rooms.remove(roomCode);
+        } else if (Room.IN_GAME.equals(room.getStatus())) {
+            if (gameState != null) {
+                gameState.removePlayer(playerId);
+                if (GameState.FINISHED.equals(gameState.getTurnPhase())
+                        || room.getPlayers().size() < MIN_PLAYERS) {
+                    gameState.setTurnPhase(GameState.FINISHED);
+                    room.setStatus(Room.FINISHED);
+                } else {
+                    room.touch();
+                }
+            }
         } else {
-            // ⚠️ [멤버 3을 위한 중요 체크포인트]
-            // 대기방일 때는 인원수가 줄어들면 다시 WAITING 상태로 돌아가면 되지만,
-            // 게임 도중(IN_GAME)에 누군가 튕기면 어떻게 할지 멤버 2와 상의해야 합니다.
-            // 현재 Room.java의 refreshReadyStatus 로직상 게임 도중에는 상태가 변하지 않으므로,
-            // 남은 사람들이 계속 게임을 하거나 강제 종료 시키는 추가 로직이 필요할 수 있습니다.
             room.refreshReadyStatus(MIN_PLAYERS);
         }
+    }
+
+    public boolean isWaitingOrReady(Room room) {
+        return (Room.WAITING.equals(room.getStatus()) || Room.READY.equals(room.getStatus()));
+    }
+
+    public boolean isJoinable(Room room) {
+        return isWaitingOrReady(room) && room.getPlayers().size() < MAX_PLAYERS;
     }
 
     public Room requireRoom(String roomCode) {

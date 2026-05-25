@@ -11,6 +11,7 @@ import java.io.InputStream;
 
 class FirebaseAdminAuthVerifier implements AuthVerifier {
     static final String SERVICE_ACCOUNT_ENV = "FIREBASE_SERVICE_ACCOUNT";
+    static final String GOOGLE_APPLICATION_CREDENTIALS_ENV = "GOOGLE_APPLICATION_CREDENTIALS";
 
     private final TokenVerifier tokenVerifier;
 
@@ -23,7 +24,7 @@ class FirebaseAdminAuthVerifier implements AuthVerifier {
     }
 
     @Override
-    public String verify(String firebaseIdToken, String connectionId) {
+    public String verify(String firebaseIdToken) {
         String token = firebaseIdToken == null ? "" : firebaseIdToken.trim();
         if (token.isEmpty()) {
             throw new AuthException("Missing Firebase ID token");

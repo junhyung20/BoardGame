@@ -5,10 +5,7 @@ import com.example.boardgame.socket.protocol.SocketMessage;
 
 import org.java_websocket.WebSocket;
 
-import java.util.UUID;
-
 public class ClientSession {
-    private final String connectionId = UUID.randomUUID().toString();
     private final WebSocket webSocket;
     private volatile String roomCode = "";
     private volatile String playerId = "";
@@ -24,6 +21,11 @@ public class ClientSession {
         this.firebaseUid = firebaseUid == null ? "" : firebaseUid;
     }
 
+    public void clearRoomBinding() {
+        this.roomCode = "";
+        this.playerId = "";
+    }
+
     void send(SocketMessage message) {
         if (webSocket.isOpen()) {
             webSocket.send(message.toWireText());
@@ -31,8 +33,12 @@ public class ClientSession {
     }
 
     void sendError(SocketMessage request, String errorCode, String details) {
+        sendError(request.getRequestId(), errorCode, details);
+    }
+
+    void sendError(String requestId, String errorCode, String details) {
         send(SocketMessage.builder(MessageTypes.REQUEST_ERROR)
-                .requestId(request.getRequestId())
+                .requestId(requestId)
                 .put("errorCode", errorCode)
                 .put("details", details)
                 .build());
@@ -40,10 +46,6 @@ public class ClientSession {
 
     void close() {
         webSocket.close();
-    }
-
-    public String getConnectionId() {
-        return connectionId;
     }
 
     public String getRoomCode() {

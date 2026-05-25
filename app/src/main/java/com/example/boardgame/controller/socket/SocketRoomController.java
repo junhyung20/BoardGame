@@ -40,16 +40,26 @@ public class SocketRoomController {
     }
 
     public void createRoom(String nickname, String firebaseIdToken) {
+        createRoom(nickname, firebaseIdToken, "");
+    }
+
+    public void createRoom(String nickname, String firebaseIdToken, String roomPassword) {
         socketClient.send(
                 commandBuilder(MessageTypes.CREATE_ROOM, nickname, firebaseIdToken)
+                        .put("roomPassword", roomPassword)
                         .build()
         );
     }
 
     public void joinRoom(String roomCode, String nickname, String firebaseIdToken) {
+        joinRoom(roomCode, nickname, firebaseIdToken, "");
+    }
+
+    public void joinRoom(String roomCode, String nickname, String firebaseIdToken, String roomPassword) {
         socketClient.send(
                 commandBuilder(MessageTypes.JOIN_ROOM, nickname, firebaseIdToken)
                         .put("roomCode", roomCode)
+                        .put("roomPassword", roomPassword)
                         .build()
         );
     }
@@ -57,6 +67,14 @@ public class SocketRoomController {
     public void matchmake(String nickname, String firebaseIdToken) {
         socketClient.send(
                 commandBuilder(MessageTypes.MATCHMAKE, nickname, firebaseIdToken)
+                        .build()
+        );
+    }
+
+    public void leaveRoom() {
+        socketClient.send(
+                SocketMessage.builder(MessageTypes.LEAVE_ROOM)
+                        .requestId(UUID.randomUUID().toString())
                         .build()
         );
     }
@@ -135,14 +153,6 @@ public class SocketRoomController {
                 SocketMessage.builder(MessageTypes.SUBMIT_MICRO_GAME_SCORE)
                         .requestId(UUID.randomUUID().toString())
                         .put("score", score)
-                        .build()
-        );
-    }
-
-    public void finishMicroGame() {
-        socketClient.send(
-                SocketMessage.builder(MessageTypes.FINISH_MICRO_GAME)
-                        .requestId(UUID.randomUUID().toString())
                         .build()
         );
     }

@@ -29,6 +29,39 @@
             android:singleLine="true"
             android:text="ws://10.0.2.2:8080/game" />
 
+        <TextView
+            android:id="@+id/serverPresetText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Server preset" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/emulatorServerButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Emu" />
+
+            <Button
+                android:id="@+id/lanServerButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="LAN" />
+
+            <Button
+                android:id="@+id/wanServerButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="WAN" />
+        </LinearLayout>
+
         <EditText
             android:id="@+id/nicknameInput"
             android:layout_width="match_parent"
@@ -64,6 +97,14 @@
             android:layout_height="wrap_content"
             android:hint="Room code"
             android:inputType="number"
+            android:singleLine="true" />
+
+        <EditText
+            android:id="@+id/roomPasswordInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Room password"
+            android:inputType="textPassword"
             android:singleLine="true" />
 
         <LinearLayout
@@ -187,13 +228,6 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Micro Score" />
-
-            <Button
-                android:id="@+id/finishMicroGameButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="End Micro" />
         </LinearLayout>
 
         <TextView

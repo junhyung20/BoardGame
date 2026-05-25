@@ -1,7 +1,9 @@
 package com.example.boardgame.server.model;
 
+import com.example.boardgame.socket.protocol.LobbySnapshot;
 import com.example.boardgame.socket.protocol.PlayerSnapshot;
 import com.example.boardgame.socket.protocol.RoomSnapshot;
+import com.example.boardgame.server.security.PasswordHasher;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,9 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Room {
-    // ⚠️ [추가 포인트 1]  최대 인원 설정
-    public static final int MAX_PLAYERS = 4;
-
     public static final String WAITING = "WAITING";
     public static final String READY = "READY";
     public static final String IN_GAME = "IN_GAME";
@@ -23,6 +22,8 @@ public class Room {
     private long updatedAtMillis;
     private String hostPlayerId = "";
     private String status = WAITING;
+    private byte[] passwordSalt;
+    private byte[] passwordHash;
 
     // LinkedHashMap 유지: 유저가 방에 들어온 순서를 보장하여 턴 순서 배정에 유리함
     private final Map<String, Player> players = new LinkedHashMap<>();
@@ -38,20 +39,13 @@ public class Room {
         this.updatedAtMillis = createdAtMillis;
     }
 
-    // 인원 제한 방어 로직 추가
-    public boolean addPlayer(Player player) {
-        // 이미 방이 꽉 찼고, 새로 들어오려는 유저라면 입장 거부
-        if (players.size() >= MAX_PLAYERS && !players.containsKey(player.getId())) {
-            return false;
-        }
-
+    public void addPlayer(Player player) {
         players.put(player.getId(), player);
         if (hostPlayerId.isEmpty()) {
             hostPlayerId = player.getId();
             player.setHost(true);
         }
         touch();
-        return true;
     }
 
     public void removePlayer(String playerId) {
@@ -70,8 +64,7 @@ public class Room {
     }
 
     public boolean canStart(int minPlayers) {
-        // 인원수가 부족하거나 최대 인원을 초과하면 시작 불가
-        if (players.size() < minPlayers || players.size() > MAX_PLAYERS) {
+        if (players.size() < minPlayers) {
             return false;
         }
         for (Player player : players.values()) {
@@ -101,6 +94,41 @@ public class Room {
             playerSnapshots.add(player.toSnapshot());
         }
         return new RoomSnapshot(code, hostPlayerId, status, playerSnapshots);
+    }
+
+    public LobbySnapshot.RoomListInfo toRoomListInfo() {
+        Player host = getPlayer(hostPlayerId);
+        return new LobbySnapshot.RoomListInfo(
+                code,
+                status,
+                players.size(),
+                host == null ? "" : host.getNickname(),
+                hasPassword()
+        );
+    }
+
+    public void setPassword(String password) {
+        if (password == null || password.trim().isEmpty()) {
+            passwordSalt = null;
+            passwordHash = null;
+            touch();
+            return;
+        }
+
+        passwordSalt = PasswordHasher.newSalt();
+        passwordHash = PasswordHasher.hash(password, passwordSalt);
+        touch();
+    }
+
+    public boolean hasPassword() {
+        return passwordSalt != null && passwordHash != null;
+    }
+
+    public boolean passwordMatches(String attemptedPassword) {
+        if (!hasPassword()) {
+            return attemptedPassword == null || attemptedPassword.trim().isEmpty();
+        }
+        return PasswordHasher.matches(attemptedPassword, passwordSalt, passwordHash);
     }
 
     public void touch() {

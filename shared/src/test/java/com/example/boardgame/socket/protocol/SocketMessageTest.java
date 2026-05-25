@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class SocketMessageTest {
     @Test
@@ -12,6 +13,7 @@ public class SocketMessageTest {
                 .requestId("request-1")
                 .put("nickname", "Player One")
                 .put("score", 12)
+                .put("serverTimeMillis", 123456789L)
                 .put("ready", true)
                 .put("symbols", "a&b=c")
                 .build();
@@ -23,7 +25,8 @@ public class SocketMessageTest {
         assertEquals("request-1", parsed.getRequestId());
         assertEquals("Player One", parsed.getOrDefault("nickname", ""));
         assertEquals(12, parsed.getInt("score", 0));
-        assertEquals(true, parsed.getBoolean("ready", false));
+        assertEquals("123456789", parsed.getOrDefault("serverTimeMillis", ""));
+        assertTrue(parsed.getBoolean("ready", false));
         assertEquals("a&b=c", parsed.getOrDefault("symbols", ""));
         assertFalse(wireText.contains("type=CREATE_ROOM"));
     }

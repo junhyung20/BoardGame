@@ -3,8 +3,10 @@ package com.example.boardgame.socket.protocol;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class SnapshotMessageMapperTest {
@@ -15,8 +17,8 @@ public class SnapshotMessageMapperTest {
                 "player-1",
                 "WAITING",
                 Arrays.asList(
-                        new PlayerSnapshot("player-1", "Host", 10, 3, true, true),
-                        new PlayerSnapshot("player-2", "Guest", 4, 1, false, false)
+                        new PlayerSnapshot("player-1", "Host", 10, 3, true, true, false, Collections.emptyList()),
+                        new PlayerSnapshot("player-2", "Guest", 4, 1, false, false, false, Collections.emptyList())
                 )
         );
 
@@ -43,7 +45,8 @@ public class SnapshotMessageMapperTest {
                 "player-2",
                 6,
                 "WAITING_FOR_TILE",
-                Arrays.asList("player-1", "player-2")
+                Arrays.asList("player-1", "player-2"),
+                ""
         );
 
         SocketMessage message = SnapshotMessageMapper.gameUpdated(snapshot);
@@ -59,5 +62,26 @@ public class SnapshotMessageMapperTest {
         assertEquals(6, parsed.getLastDiceRoll());
         assertEquals("WAITING_FOR_TILE", parsed.getTurnPhase());
         assertEquals(Arrays.asList("player-1", "player-2"), parsed.getTurnOrder());
+    }
+
+    @Test
+    public void lobbySnapshotUsesRoomListWithPasswordFlagOnly() {
+        LobbySnapshot snapshot = new LobbySnapshot(
+                Arrays.asList(
+                        new LobbySnapshot.RoomListInfo("123456", "WAITING", 1, "Host", true)
+                )
+        );
+
+        SocketMessage message = SnapshotMessageMapper.lobbyUpdated(snapshot);
+        String wireText = message.toWireText();
+        LobbySnapshot parsed = SnapshotMessageMapper.toLobbySnapshot(SocketMessage.parse(wireText));
+
+        assertTrue(wireText.contains("\"lobby\""));
+        assertTrue(wireText.contains("\"hasPassword\":true"));
+        assertFalse(wireText.contains("passwordHash"));
+        assertFalse(wireText.contains("passwordSalt"));
+        assertEquals(1, parsed.getRooms().size());
+        assertEquals("123456", parsed.getRooms().get(0).getCode());
+        assertTrue(parsed.getRooms().get(0).hasPassword());
     }
 }

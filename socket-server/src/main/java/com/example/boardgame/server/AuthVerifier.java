@@ -1,5 +1,5 @@
 package com.example.boardgame.server;
 
 public interface AuthVerifier {
-    String verify(String firebaseIdToken, String connectionId);
+    String verify(String firebaseIdToken);
 }

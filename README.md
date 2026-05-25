@@ -24,7 +24,7 @@ Still needed:
 - Reconnect/resume support.
 - Polished board-game rules on the server.
 - Final tile effects, mini games, micro games, scoring, and winner calculation.
-- WAN deployment through `wss://`.
+- Production hosting beyond temporary ngrok WAN testing.
 
 ## Modules
 
@@ -54,6 +54,12 @@ Start the server:
 ./gradlew :socket-server:run
 ```
 
+If no server credential path is set, the server uses dev auth automatically. For Firebase Admin auth:
+
+```bash
+FIREBASE_SERVICE_ACCOUNT=/absolute/path/to/service-account.json ./gradlew :socket-server:run
+```
+
 Connect Android to:
 
 ```text
@@ -65,6 +71,33 @@ Android emulator host shortcut:
 ```text
 ws://10.0.2.2:8080/game
 ```
+
+## WAN Socket Test With ngrok
+
+Run the local server:
+
+```bash
+FIREBASE_SERVICE_ACCOUNT=/absolute/path/to/service-account.json BOARDGAME_NETWORK=WAN ./gradlew :socket-server:run
+```
+
+If `FIREBASE_SERVICE_ACCOUNT` is omitted, the server uses dev auth.
+
+In another terminal:
+
+```bash
+ngrok http 8080
+```
+
+If ngrok prints `https://abc123.ngrok-free.app`, connect Android to:
+
+```text
+wss://abc123.ngrok-free.app/game
+```
+
+The debug client also has `Emu`, `LAN`, and `WAN` server preset buttons.
+After connecting, the log should show the server auth mode, network mode, and protocol version from `SERVER_HELLO`.
+
+See [WAN ngrok Guide](docs/WAN_NGROK_GUIDE.md).
 
 ## Firebase Config
 
@@ -84,13 +117,9 @@ export FIREBASE_SERVICE_ACCOUNT=/absolute/path/to/service-account.json
 
 or configure `GOOGLE_APPLICATION_CREDENTIALS`.
 
-For local game-flow testing without Firebase Admin credentials, run the socket server with dev auth:
+If neither credential path is set, the socket server uses `DevAuthVerifier` so local gameplay can run without Firebase Admin credentials.
 
-```bash
-BOARDGAME_DEV_AUTH=true ./gradlew :socket-server:run
-```
-
-This bypasses Firebase token verification and is not safe for production.
+Dev auth bypasses Firebase token verification and is not safe for production.
 
 ## Docs
 
@@ -98,4 +127,5 @@ This bypasses Firebase token verification and is not safe for production.
 - [Code Walkthrough](docs/CODE_WALKTHROUGH.md)
 - [Socket Architecture](docs/SOCKET_ARCHITECTURE.md)
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
+- [WAN ngrok Guide](docs/WAN_NGROK_GUIDE.md)
 - [Team Assignment](docs/TEAM_ASSIGNMENT.md)

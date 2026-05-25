@@ -33,7 +33,7 @@ Done:
 Not proven yet:
 
 - Multiplayer behavior has not been tested on emulator/phone.
-- WAN behavior has not been implemented or tested.
+- WAN behavior has a documented ngrok smoke-test path, but has not been manually tested.
 - Production Firebase token verification has not been manually tested with real service account credentials.
 
 ## Milestone 1: Make It Run
@@ -112,7 +112,7 @@ Status: implemented in code, pending manual Firebase credential and device verif
 Tasks:
 
 - [x] Add Firebase Admin SDK to `socket-server`.
-- [x] Load server credentials from `FIREBASE_SERVICE_ACCOUNT` or `GOOGLE_APPLICATION_CREDENTIALS`.
+- [x] Load server credentials from `FIREBASE_SERVICE_ACCOUNT` or `GOOGLE_APPLICATION_CREDENTIALS`; use dev auth when neither is set.
 - [x] Verify Firebase ID tokens before `CREATE_ROOM`, `JOIN_ROOM`, and `MATCHMAKE`.
 - [x] Reject missing, invalid, expired, or revoked tokens with `UNAUTHENTICATED`.
 - [x] Store the verified Firebase UID in `Player` and `ClientSession`.
@@ -128,38 +128,54 @@ Goal:
 server owns the actual board game
 ```
 
+Current direction:
+
+- Mini-game and micro-game play happens locally on clients.
+- Server owns room state, turn state, timers/deadlines, score acceptance, score rewards, and final results.
+- Do not add dedicated mini/micro snapshots unless the client needs more than the existing `GAME_UPDATED` and `ROOM_UPDATED` data.
+
 Tasks:
 
-- Define final board size, tile IDs, and tile types.
-- Replace starter tile behavior with final tile effect rules.
-- Keep dice rolls, random outcomes, rewards, and winner decisions server-owned.
+- [x] Define current board size, tile IDs, and tile types.
+- [x] Replace starter tile behavior with server-side tile effect rules.
+- [x] Keep dice rolls, random outcomes, rewards, and winner decisions server-owned.
 - Define final card/effect rules if cards are part of the game.
-- Define allowed turn phases and validate each command against the current phase.
-- Add dedicated mini-game and micro-game snapshots if clients need timers, selected game type, submitted-player counts, or result summaries.
+- [x] Define allowed turn phases and validate each command against the current phase.
+- [x] Split round-end mini-game into `WAITING_FOR_MINI_GAME` and `MINI_GAME_RUNNING`.
+- [x] Keep micro-game as a current-player tile event with server-side deadline and score validation.
+- Add dedicated mini-game and micro-game snapshots only if clients need timers, selected game type, submitted-player counts, or result summaries.
 - Decide final mini-game types and required payloads.
 - Decide final micro-game types and required payloads.
-- Add timeout/missing-submission rules for mini and micro games.
-- Finalize score rewards, tie handling, end-of-game conditions, and winner calculation.
-- Add a match-complete broadcast or final `GAME_UPDATED` fields for winner/result display.
-- Add unit tests for room rules, turn rules, tile effects, score ranking, and winner calculation.
-- Add protocol tests for snapshot encode/decode and request/response compatibility.
+- [x] Add timeout/missing-submission rules for mini and micro games.
+- [x] Finalize current score rewards, end-of-game conditions, and winner calculation.
+- [x] Use final `GAME_UPDATED.lastSystemMessage` for winner/result display.
+- [x] Add unit tests for room rules, turn rules, mini/micro submission rules, score ranking, and winner calculation.
+- [x] Add protocol tests for snapshot encode/decode and request/response compatibility.
+- Finalize tie handling if equal final scores need shared rank instead of stable order.
 
 Keep the current service split unless a feature clearly needs a new boundary. Avoid adding more services before the existing ones become hard to maintain.
 
 ## Milestone 6: Reliability And WAN
 
-Tasks:
+Status: enough for WAN smoke testing and client UI work.
 
-- Add reconnect/resume by verified Firebase UID, room code, and a server-issued resume token.
-- Reserve a disconnected player's seat for a short grace period before removing them.
-- Add heartbeat timeout policy on top of `APP_PING` / `APP_PONG`.
-- Track room `createdAt` and `lastActivityAt`.
-- Add scheduled cleanup for abandoned rooms, stale matchmaking rooms, and inactive games.
-- Replace raw exception details in `REQUEST_ERROR` with stable protocol error codes such as `ROOM_NOT_FOUND`, `ROOM_FULL`, `NOT_HOST`, `NOT_YOUR_TURN`, and `INVALID_STATE`.
-- Add protocol versioning or a handshake field before changing message shapes.
-- Add structured logs for room creation, joins, disconnects, command failures, and game transitions.
-- Add metrics for active rooms, connected players, command latency, and error rates.
-- Decide whether match history or reconnect-safe game state needs persistence.
-- Deploy behind `wss://`.
-- Run WAN smoke tests through ngrok or the chosen host.
-- Add rate limits and origin/network controls appropriate for the deployment.
+Done:
+
+- [x] Keep server connection-lost timeout plus `APP_PING` / `APP_PONG` heartbeat messages.
+- [x] Track room `createdAt` and `updatedAt`/last activity.
+- [x] Replace raw exception details in `REQUEST_ERROR` with stable protocol error codes such as `ROOM_NOT_FOUND`, `ROOM_FULL`, `NOT_HOST`, `NOT_YOUR_TURN`, and `INVALID_STATE`.
+- [x] Add `SERVER_HELLO` handshake with protocol version, auth mode, and LAN/WAN mode.
+- [x] Add basic structured logs for socket open/close/error, malformed messages, and command failures.
+- [x] Add documented temporary `wss://` path through ngrok.
+- [x] Add `BOARDGAME_NETWORK=WAN` binding mode for ngrok.
+- [ ] Manually run WAN smoke tests through ngrok.
+
+Deferred until after the first real client UI pass:
+
+- Reconnect/resume by verified Firebase UID, room code, and a server-issued resume token.
+- Disconnected-seat grace period.
+- Scheduled cleanup for inactive non-empty rooms.
+- Metrics for active rooms, connected players, command latency, and error rates.
+- Match history or reconnect-safe persistence.
+- Stable production `wss://` deployment.
+- Rate limits and origin/network controls.

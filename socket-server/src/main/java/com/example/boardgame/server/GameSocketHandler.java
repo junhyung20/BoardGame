@@ -8,11 +8,15 @@ import com.example.boardgame.server.service.MicroGameService;
 import com.example.boardgame.server.service.MiniGameService;
 import com.example.boardgame.server.service.RoomService;
 import com.example.boardgame.server.service.ScoreService;
+import com.example.boardgame.socket.protocol.ErrorCodes;
 import com.example.boardgame.socket.protocol.GameSnapshot;
+import com.example.boardgame.socket.protocol.LobbySnapshot;
 import com.example.boardgame.socket.protocol.MessageTypes;
 import com.example.boardgame.socket.protocol.RoomSnapshot;
 import com.example.boardgame.socket.protocol.SnapshotMessageMapper;
 import com.example.boardgame.socket.protocol.SocketMessage;
+
+import java.util.ArrayList;
 
 public class GameSocketHandler {
     private final BoardGameSocketServer socketServer;
@@ -21,7 +25,7 @@ public class GameSocketHandler {
     private final ScoreService scoreService = new ScoreService();
     private final BoardGameService boardGameService = new BoardGameService();
     private final MiniGameService miniGameService = new MiniGameService(boardGameService, scoreService);
-    private final MicroGameService microGameService = new MicroGameService(boardGameService, scoreService);
+    private final MicroGameService microGameService = new MicroGameService(boardGameService);
 
     public GameSocketHandler(BoardGameSocketServer socketServer, AuthVerifier authVerifier) {
         this.socketServer = socketServer;
@@ -30,16 +34,19 @@ public class GameSocketHandler {
 
     public synchronized void handle(ClientSession session, SocketMessage message) {
         try {
-            Result result = handleCommand(session, message);
-            sendOk(session, message, result);
-            publishRoom(result.room);
-            if (result.publishGame) {
-                publishGame(result.room);
-            }
+            handleCommand(session, message);
         } catch (AuthException e) {
-            session.sendError(message, "UNAUTHENTICATED", "Authentication required");
+            ServerError error = ServerErrorMapper.from(e);
+            logCommandFailure(session, message, error, e);
+            session.sendError(message, error.code(), error.details());
         } catch (IllegalArgumentException | IllegalStateException e) {
-            session.sendError(message, "BAD_REQUEST", e.getMessage());
+            ServerError error = ServerErrorMapper.from(e);
+            logCommandFailure(session, message, error, e);
+            session.sendError(message, error.code(), error.details());
+        } catch (RuntimeException e) {
+            ServerError error = new ServerError(ErrorCodes.INVALID_STATE, "Server failed to process command");
+            logCommandFailure(session, message, error, e);
+            session.sendError(message, error.code(), error.details());
         }
     }
 
@@ -52,133 +59,190 @@ public class GameSocketHandler {
 
         roomService.disconnect(roomCode, playerId);
         try {
-            publishRoom(roomService.requireRoom(roomCode));
+            Room room = roomService.requireRoom(roomCode);
+            publishRoom(room);
+            publishGame(room);
         } catch (IllegalArgumentException ignored) {
             // The room was removed because the last player disconnected.
         }
+        publishLobby();
     }
 
-    private Result handleCommand(ClientSession session, SocketMessage message) {
-        return switch (message.getType()) {
+    public synchronized void sendLobbySnapshot(ClientSession session) {
+        session.send(SnapshotMessageMapper.lobbyUpdated(lobbySnapshot()));
+    }
+
+    private void handleCommand(ClientSession session, SocketMessage message) {
+        switch (message.getType()) {
             case MessageTypes.CREATE_ROOM -> createRoom(session, message);
             case MessageTypes.JOIN_ROOM -> joinRoom(session, message);
             case MessageTypes.MATCHMAKE -> matchmake(session, message);
+            case MessageTypes.LEAVE_ROOM -> leaveRoom(session, message);
             case MessageTypes.SET_READY -> setReady(session, message);
-            case MessageTypes.START_GAME -> startGame(session);
-            case MessageTypes.ROLL_DICE -> rollDice(session);
-            case MessageTypes.APPLY_TILE_EFFECT -> applyTileEffect(session);
+            case MessageTypes.START_GAME -> startGame(session, message);
+            case MessageTypes.ROLL_DICE -> rollDice(session, message);
+            case MessageTypes.APPLY_TILE_EFFECT -> applyTileEffect(session, message);
             case MessageTypes.START_MINI_GAME -> startMiniGame(session, message);
             case MessageTypes.SUBMIT_MINI_GAME_SCORE -> submitMiniGameScore(session, message);
-            case MessageTypes.FINISH_MINI_GAME -> finishMiniGame(session);
+            case MessageTypes.FINISH_MINI_GAME -> finishMiniGame(session, message);
             case MessageTypes.SUBMIT_MICRO_GAME_SCORE -> submitMicroGameScore(session, message);
-            case MessageTypes.FINISH_MICRO_GAME -> finishMicroGame(session);
             default -> throw new IllegalArgumentException("Unsupported type: " + message.getType());
-        };
+        }
     }
 
-    private Result createRoom(ClientSession session, SocketMessage message) {
+    private void createRoom(ClientSession session, SocketMessage message) {
         requireNotInRoom(session);
-        String firebaseUid = verify(message, session);
-        Room room = roomService.createRoom(firebaseUid, message.getOrDefault("nickname", "Player"));
+        String firebaseUid = verify(message);
+        Room room = roomService.createRoom(
+                firebaseUid,
+                message.getOrDefault("nickname", "Player"),
+                message.getOrDefault("roomPassword", "")
+        );
         Player player = room.getPlayerList().iterator().next();
         session.bindPlayer(room.getCode(), player.getId(), firebaseUid);
-        return Result.roomOnly(room, player);
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishLobby();
     }
 
-    private Result joinRoom(ClientSession session, SocketMessage message) {
+    private void joinRoom(ClientSession session, SocketMessage message) {
         requireNotInRoom(session);
         String roomCode = message.getOrDefault("roomCode", "");
-        String firebaseUid = verify(message, session);
-        Player player = roomService.joinRoom(roomCode, firebaseUid, message.getOrDefault("nickname", "Player"));
+        String firebaseUid = verify(message);
+        Player player = roomService.joinRoom(
+                roomCode,
+                firebaseUid,
+                message.getOrDefault("nickname", "Player"),
+                message.getOrDefault("roomPassword", "")
+        );
         Room room = roomService.requireRoom(roomCode);
         session.bindPlayer(room.getCode(), player.getId(), firebaseUid);
-        return Result.roomOnly(room, player);
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishLobby();
     }
 
-    private Result matchmake(ClientSession session, SocketMessage message) {
+    private void matchmake(ClientSession session, SocketMessage message) {
         requireNotInRoom(session);
-        String firebaseUid = verify(message, session);
+        String firebaseUid = verify(message);
         RoomService.MatchResult matchResult = roomService.matchmake(
                 firebaseUid,
                 message.getOrDefault("nickname", "Player")
         );
         session.bindPlayer(matchResult.getRoom().getCode(), matchResult.getPlayer().getId(), firebaseUid);
-        return Result.roomOnly(matchResult.getRoom(), matchResult.getPlayer());
+        sendOk(session, message, matchResult.getRoom());
+        publishRoom(matchResult.getRoom());
+        publishLobby();
     }
 
-    private Result setReady(ClientSession session, SocketMessage message) {
+    private void setReady(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         roomService.setReady(room.getCode(), session.getPlayerId(), message.getBoolean("ready", false));
-        return Result.roomOnly(room, roomService.requirePlayer(room, session.getPlayerId()));
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishLobby();
     }
 
-    private Result startGame(ClientSession session) {
+    private void startGame(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         roomService.requireHost(room, session.getPlayerId());
-        boardGameService.startGame(room);
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+        boardGameService.startGame(room, RoomService.MIN_PLAYERS);
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishGame(room);
+        publishLobby();
     }
 
-    private Result rollDice(ClientSession session) {
+    private void rollDice(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         boardGameService.rollDice(room, session.getPlayerId());
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishGame(room);
     }
 
-    private Result applyTileEffect(ClientSession session) {
+    private void applyTileEffect(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         String tileType = boardGameService.applyTileEffect(room, session.getPlayerId());
         if (BoardGameService.TILE_AD.equals(tileType)) {
-            microGameService.startMicroGame(room, session.getPlayerId(), "QUICK_TAP");
+            microGameService.startMicroGame(room, session.getPlayerId());
         }
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishGame(room);
     }
 
-    private Result startMiniGame(ClientSession session, SocketMessage message) {
+    private void startMiniGame(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         roomService.requireHost(room, session.getPlayerId());
         miniGameService.startMiniGame(room);
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishGame(room);
     }
 
-    private Result submitMiniGameScore(ClientSession session, SocketMessage message) {
+    private void submitMiniGameScore(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
-        miniGameService.submitMiniGameResult(
-                room,
-                session.getPlayerId(),
-                message.getOrDefault("state", "CLEAR"),
-                message.getInt("progress", 0),
-                message.getInt("completionTime", 0)
-        );
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+        miniGameService.submitMiniGameScore(room, session.getPlayerId(), message.getInt("score", 0));
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishGame(room);
     }
 
-    private Result finishMiniGame(ClientSession session) {
+    private void finishMiniGame(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         roomService.requireHost(room, session.getPlayerId());
         miniGameService.finishMiniGame(room);
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishGame(room);
     }
 
-    private Result submitMicroGameScore(ClientSession session, SocketMessage message) {
+    private void submitMicroGameScore(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         microGameService.submitMicroGameScore(room, session.getPlayerId(), message.getInt("score", 0));
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+        sendOk(session, message, room);
+        publishRoom(room);
+        publishGame(room);
     }
 
-    private Result finishMicroGame(ClientSession session) {
-        Room room = requireBoundRoom(session);
-        roomService.requireHost(room, session.getPlayerId());
-        microGameService.finishMicroGame(room);
-        return Result.roomAndGame(room, roomService.requirePlayer(room, session.getPlayerId()));
+    private void leaveRoom(ClientSession session, SocketMessage message) {
+        String roomCode = session.getRoomCode();
+        String playerId = session.getPlayerId();
+        if (roomCode.isEmpty() || playerId.isEmpty()) {
+            throw new IllegalStateException("Connection is not in a room");
+        }
+
+        Room room = roomService.requireRoom(roomCode);
+        if (Room.IN_GAME.equals(room.getStatus())) {
+            throw new IllegalStateException("Cannot leave after game has started");
+        }
+
+        roomService.disconnect(roomCode, playerId);
+        session.clearRoomBinding();
+        sendOk(session, message);
+        try {
+            publishRoom(roomService.requireRoom(roomCode));
+        } catch (IllegalArgumentException ignored) {
+            // The room was removed because the last player left.
+        }
+        publishLobby();
     }
 
-    private void sendOk(ClientSession session, SocketMessage request, Result result) {
+    private void sendOk(ClientSession session, SocketMessage request, Room room) {
+        SocketMessage.Builder builder = SocketMessage.builder(MessageTypes.REQUEST_OK)
+                .requestId(request.getRequestId());
+        if (!session.getPlayerId().isEmpty()) {
+            builder.put("roomCode", room.getCode())
+                    .put("playerId", session.getPlayerId())
+                    .put("status", room.getStatus());
+        }
+        session.send(builder.build());
+    }
+
+    private void sendOk(ClientSession session, SocketMessage request) {
         session.send(SocketMessage.builder(MessageTypes.REQUEST_OK)
                 .requestId(request.getRequestId())
-                .put("roomCode", result.room.getCode())
-                .put("playerId", result.player.getId())
-                .put("status", result.room.getStatus())
                 .build());
     }
 
@@ -196,6 +260,18 @@ public class GameSocketHandler {
         socketServer.sendToRoom(room.getCode(), SnapshotMessageMapper.gameUpdated(snapshot));
     }
 
+    private void publishLobby() {
+        socketServer.sendToLobby(SnapshotMessageMapper.lobbyUpdated(lobbySnapshot()));
+    }
+
+    private LobbySnapshot lobbySnapshot() {
+        ArrayList<LobbySnapshot.RoomListInfo> rooms = new ArrayList<>();
+        for (Room room: roomService.getLobbyRooms()) {
+            rooms.add(room.toRoomListInfo());
+        }
+        return new LobbySnapshot(rooms);
+    }
+
     private Room requireBoundRoom(ClientSession session) {
         return roomService.requireRoom(session.getRoomCode());
     }
@@ -206,27 +282,22 @@ public class GameSocketHandler {
         }
     }
 
-    private String verify(SocketMessage message, ClientSession session) {
-        return authVerifier.verify(message.getOrDefault("firebaseIdToken", ""), session.getConnectionId());
+    private String verify(SocketMessage message) {
+        return authVerifier.verify(message.getOrDefault("firebaseIdToken", ""));
     }
 
-    private static class Result {
-        private final Room room;
-        private final Player player;
-        private final boolean publishGame;
-
-        private Result(Room room, Player player, boolean publishGame) {
-            this.room = room;
-            this.player = player;
-            this.publishGame = publishGame;
-        }
-
-        static Result roomOnly(Room room, Player player) {
-            return new Result(room, player, false);
-        }
-
-        static Result roomAndGame(Room room, Player player) {
-            return new Result(room, player, true);
-        }
+    private void logCommandFailure(ClientSession session, SocketMessage message, ServerError error, RuntimeException e) {
+        System.err.println("event=command_failed"
+                + " type=" + message.getType()
+                + " requestId=" + message.getRequestId()
+                + " roomCode=" + emptyAsDash(session.getRoomCode())
+                + " playerId=" + emptyAsDash(session.getPlayerId())
+                + " errorCode=" + error.code()
+                + " cause=" + e.getClass().getSimpleName());
     }
+
+    private String emptyAsDash(String value) {
+        return value == null || value.isEmpty() ? "-" : value;
+    }
+
 }

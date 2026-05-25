@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/title_bg_pastel"
+    android:paddingHorizontal="32dp"
+    android:paddingVertical="22dp">
+
+    <TextView
+        android:id="@+id/nicknameBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_title_nickname_badge"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="7dp"
+        android:textColor="@color/title_badge_text"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/title_screen_title"
+        android:textColor="@color/title_text_green"
+        android:textSize="44sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/joinGameButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <Button
+        android:id="@+id/joinGameButton"
+        android:layout_width="0dp"
+        android:layout_height="92dp"
+        android:layout_marginTop="34dp"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/bg_title_join_button"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:text="@string/title_join_button"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:autoSizeTextType="uniform"
+        app:autoSizeMinTextSize="15sp"
+        app:autoSizeMaxTextSize="24sp"
+        app:autoSizeStepGranularity="1sp"
+        app:layout_constraintEnd_toStartOf="@id/optionsButton"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/titleText" />
+
+    <Button
+        android:id="@+id/optionsButton"
+        android:layout_width="0dp"
+        android:layout_height="92dp"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/bg_title_option_button"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:text="@string/title_options_button"
+        android:textAllCaps="false"
+        android:textColor="#1E1E1E"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:autoSizeTextType="uniform"
+        app:autoSizeMinTextSize="15sp"
+        app:autoSizeMaxTextSize="24sp"
+        app:autoSizeStepGranularity="1sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/joinGameButton"
+        app:layout_constraintTop_toTopOf="@id/joinGameButton" />
+
+    <Button
+        android:id="@+id/rulesButton"
+        android:layout_width="300dp"
+        android:layout_height="58dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_action_secondary"
+        android:text="@string/title_rules_button"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/joinGameButton" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
