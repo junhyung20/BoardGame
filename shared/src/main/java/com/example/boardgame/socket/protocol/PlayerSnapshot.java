@@ -12,9 +12,8 @@ public class PlayerSnapshot {
     private final boolean ready;
     private final boolean host;
 
-    // ⚠️ [추가 포인트 1] 클라이언트 UI 렌더링을 위한 상태 필드 추가
-    private final boolean inMicroGame; // 현재 광고 시청 등 마이크로 게임 중인지 여부
-    private final List<String> itemCards; // 보유 중인 아이템 카드 목록 (방어권 등)
+    private final boolean inMicroGame;
+    private final List<String> itemCards;
 
     public PlayerSnapshot(
             String id,
@@ -33,7 +32,6 @@ public class PlayerSnapshot {
         this.ready = ready;
         this.host = host;
         this.inMicroGame = inMicroGame;
-        // null 방지 및 읽기 전용 복사본 생성
         this.itemCards = itemCards == null ? new ArrayList<>() : new ArrayList<>(itemCards);
     }
 

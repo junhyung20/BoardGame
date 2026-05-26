@@ -72,11 +72,18 @@ public class GameSocketHandler {
         session.send(SnapshotMessageMapper.lobbyUpdated(lobbySnapshot()));
     }
 
+    public synchronized RoomService.CleanupResult cleanupStaleRooms() {
+        RoomService.CleanupResult result = roomService.cleanupStaleRooms(System.currentTimeMillis());
+        if (result.hasChanges()) {
+            publishLobby();
+        }
+        return result;
+    }
+
     private void handleCommand(ClientSession session, SocketMessage message) {
         switch (message.getType()) {
             case MessageTypes.CREATE_ROOM -> createRoom(session, message);
             case MessageTypes.JOIN_ROOM -> joinRoom(session, message);
-            case MessageTypes.MATCHMAKE -> matchmake(session, message);
             case MessageTypes.LEAVE_ROOM -> leaveRoom(session, message);
             case MessageTypes.SET_READY -> setReady(session, message);
             case MessageTypes.START_GAME -> startGame(session, message);
@@ -122,19 +129,6 @@ public class GameSocketHandler {
         publishLobby();
     }
 
-    private void matchmake(ClientSession session, SocketMessage message) {
-        requireNotInRoom(session);
-        String firebaseUid = verify(message);
-        RoomService.MatchResult matchResult = roomService.matchmake(
-                firebaseUid,
-                message.getOrDefault("nickname", "Player")
-        );
-        session.bindPlayer(matchResult.getRoom().getCode(), matchResult.getPlayer().getId(), firebaseUid);
-        sendOk(session, message, matchResult.getRoom());
-        publishRoom(matchResult.getRoom());
-        publishLobby();
-    }
-
     private void setReady(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
         roomService.setReady(room.getCode(), session.getPlayerId(), message.getBoolean("ready", false));
@@ -155,7 +149,7 @@ public class GameSocketHandler {
 
     private void rollDice(ClientSession session, SocketMessage message) {
         Room room = requireBoundRoom(session);
-        boardGameService.rollDice(room, session.getPlayerId());
+        boardGameService.rollDice(room, session.getPlayerId(), message.getInt("diceRoll", 0));
         sendOk(session, message, room);
         publishRoom(room);
         publishGame(room);

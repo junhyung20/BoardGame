@@ -83,7 +83,6 @@ public class Room {
         touch();
     }
 
-    // [추가 포인트 2] 특정 플레이어 데이터를 쉽게 꺼내기 위한 헬퍼 메서드
     public Player getPlayer(String playerId) {
         return players.get(playerId);
     }

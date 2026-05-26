@@ -14,6 +14,8 @@ public final class SessionPrefs {
     private static final String KEY_DICE_FAST = "key_dice_fast";
     private static final String KEY_DEBUG_MODE = "key_debug_mode";
     private static final String KEY_DEV_CLIENT_TOKEN = "key_dev_client_token";
+    private static final String KEY_LOGIN_PROVIDER = "key_login_provider";
+    private static final String LOGIN_PROVIDER_GUEST = "guest";
     private static final int DEFAULT_VOLUME = 50;
 
     private SessionPrefs() {
@@ -23,8 +25,11 @@ public final class SessionPrefs {
         return prefs(context).getString(KEY_NICKNAME, "");
     }
 
-    public static void setNickname(Context context, String nickname) {
-        prefs(context).edit().putString(KEY_NICKNAME, nickname == null ? "" : nickname).apply();
+    public static void setGuestLogin(Context context, String nickname) {
+        prefs(context).edit()
+                .putString(KEY_NICKNAME, nickname == null ? "" : nickname)
+                .putString(KEY_LOGIN_PROVIDER, LOGIN_PROVIDER_GUEST)
+                .apply();
     }
 
     public static int getVolume(Context context) {

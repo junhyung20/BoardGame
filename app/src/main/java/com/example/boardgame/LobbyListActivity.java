@@ -2,10 +2,16 @@ package com.example.boardgame;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,8 +32,7 @@ public class LobbyListActivity extends AppCompatActivity {
     }
 
     private RoomListAdapter roomAdapter;
-    private EditText roomCodeInput;
-    private EditText roomPasswordInput;
+    private TextView emptyLobbyText;
     private String myNickname = "";
     private String pendingRoomCode = "";
     private PendingAction pendingAction = PendingAction.NONE;
@@ -77,38 +82,17 @@ public class LobbyListActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = findViewById(R.id.roomRecyclerView);
         Button createRoomButton = findViewById(R.id.createRoomButton);
-        Button refreshButton = findViewById(R.id.refreshButton);
         Button backTitleButton = findViewById(R.id.backToTitleButton);
-        roomCodeInput = findViewById(R.id.roomCodeInput);
-        roomPasswordInput = findViewById(R.id.roomPasswordInput);
         Button joinByCodeButton = findViewById(R.id.joinByCodeButton);
+        emptyLobbyText = findViewById(R.id.emptyLobbyText);
 
         myNickname = getNicknameOrDefault();
-        roomAdapter = new RoomListAdapter(room -> {
-            roomCodeInput.setText(room.roomCode);
-            joinRoom(room.roomCode);
-        });
+        roomAdapter = new RoomListAdapter(this::showRoomJoinDialog);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         recyclerView.setAdapter(roomAdapter);
 
-        createRoomButton.setOnClickListener(view -> {
-            pendingAction = PendingAction.CREATE_ROOM;
-            pendingRoomCode = "";
-            ServerSession.createRoom(this, myNickname, password());
-            Toast.makeText(this, "Creating room...", Toast.LENGTH_SHORT).show();
-        });
-        refreshButton.setOnClickListener(view -> {
-            ServerSession.connect(this);
-            renderLobby(ServerSession.getLatestLobbySnapshot());
-        });
-        joinByCodeButton.setOnClickListener(view -> {
-            String code = roomCodeInput.getText().toString().trim();
-            if (code.isEmpty()) {
-                roomCodeInput.setError(getString(R.string.lobby_list_code_required));
-                return;
-            }
-            joinRoom(code);
-        });
+        createRoomButton.setOnClickListener(view -> showCreateRoomDialog());
+        joinByCodeButton.setOnClickListener(view -> showJoinByCodeDialog());
         backTitleButton.setOnClickListener(view -> finish());
 
         renderLobby(ServerSession.getLatestLobbySnapshot());
@@ -120,6 +104,10 @@ public class LobbyListActivity extends AppCompatActivity {
         openingRoom = false;
         ServerSession.addListener(serverListener);
         ServerSession.connect(this);
+        if (!ServerSession.getCurrentRoomCode().trim().isEmpty()) {
+            ServerSession.leaveRoom();
+        }
+        renderLobby(ServerSession.getLatestLobbySnapshot());
     }
 
     @Override
@@ -134,11 +122,25 @@ public class LobbyListActivity extends AppCompatActivity {
         myNickname = getNicknameOrDefault();
     }
 
-    private void joinRoom(String roomCode) {
+    private void joinRoom(String roomCode, String password) {
         pendingAction = PendingAction.JOIN_ROOM;
         pendingRoomCode = roomCode;
-        ServerSession.joinRoom(this, roomCode, myNickname, password());
+        if (!ServerSession.joinRoom(this, roomCode, myNickname, password)) {
+            pendingAction = PendingAction.NONE;
+            pendingRoomCode = "";
+            return;
+        }
         Toast.makeText(this, "Joining room...", Toast.LENGTH_SHORT).show();
+    }
+
+    private void createRoom(String password) {
+        pendingAction = PendingAction.CREATE_ROOM;
+        pendingRoomCode = "";
+        if (!ServerSession.createRoom(this, myNickname, password)) {
+            pendingAction = PendingAction.NONE;
+            return;
+        }
+        Toast.makeText(this, "Creating room...", Toast.LENGTH_SHORT).show();
     }
 
     private void openRoom(String roomCode) {
@@ -168,14 +170,110 @@ public class LobbyListActivity extends AppCompatActivity {
             }
         }
         roomAdapter.submit(rooms);
-    }
-
-    private String password() {
-        return roomPasswordInput.getText().toString();
+        emptyLobbyText.setVisibility(rooms.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     private String getNicknameOrDefault() {
         String nickname = SessionPrefs.getNickname(this);
         return nickname == null || nickname.trim().isEmpty() ? "Player" : nickname.trim();
+    }
+
+    private void showCreateRoomDialog() {
+        EditText passwordInput = newDialogEditText(getString(R.string.lobby_list_password_hint));
+        passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.lobby_list_create_dialog_title)
+                .setView(dialogContainer(passwordInput))
+                .setNegativeButton(R.string.lobby_list_dialog_cancel, null)
+                .setPositiveButton(R.string.lobby_list_dialog_create,
+                        (dialog, which) -> createRoom(passwordInput.getText().toString()))
+                .show();
+    }
+
+    private void showJoinByCodeDialog() {
+        EditText codeInput = newDialogEditText(getString(R.string.lobby_list_code_hint));
+        codeInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        EditText passwordInput = newDialogEditText(getString(R.string.lobby_list_password_hint));
+        passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+        LinearLayout container = dialogContainer(codeInput, passwordInput);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.lobby_list_join_dialog_title)
+                .setView(container)
+                .setNegativeButton(R.string.lobby_list_dialog_cancel, null)
+                .setPositiveButton(R.string.lobby_list_dialog_join, null)
+                .create();
+
+        dialog.setOnShowListener(dialogInterface ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                    String code = codeInput.getText().toString().trim();
+                    if (code.isEmpty()) {
+                        codeInput.setError(getString(R.string.lobby_list_code_required));
+                        return;
+                    }
+                    dialog.dismiss();
+                    joinRoom(code, passwordInput.getText().toString());
+                }));
+        dialog.show();
+    }
+
+    private void showRoomJoinDialog(DemoRoom room) {
+        TextView codeText = new TextView(this);
+        codeText.setText(getString(R.string.lobby_list_room_code_label, room.roomCode));
+        codeText.setTextColor(getColor(R.color.waiting_text_primary));
+        codeText.setTextSize(16);
+
+        EditText passwordInput = null;
+        LinearLayout container;
+        if (room.hasPassword) {
+            passwordInput = newDialogEditText(getString(R.string.lobby_list_password_hint));
+            passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            container = dialogContainer(codeText, passwordInput);
+        } else {
+            container = dialogContainer(codeText);
+        }
+
+        EditText finalPasswordInput = passwordInput;
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.lobby_list_join_dialog_title)
+                .setView(container)
+                .setNegativeButton(R.string.lobby_list_dialog_cancel, null)
+                .setPositiveButton(R.string.lobby_list_dialog_join, (dialog, which) ->
+                        joinRoom(room.roomCode, finalPasswordInput == null
+                                ? ""
+                                : finalPasswordInput.getText().toString()))
+                .show();
+    }
+
+    private LinearLayout dialogContainer(android.view.View... children) {
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        int horizontalPadding = dp(20);
+        int verticalPadding = dp(8);
+        container.setPadding(horizontalPadding, verticalPadding, horizontalPadding, 0);
+
+        for (android.view.View child : children) {
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            params.topMargin = dp(8);
+            container.addView(child, params);
+        }
+        return container;
+    }
+
+    private EditText newDialogEditText(String hint) {
+        EditText editText = new EditText(this);
+        editText.setHint(hint);
+        editText.setSingleLine(true);
+        editText.setTextColor(getColor(R.color.waiting_text_primary));
+        editText.setHintTextColor(getColor(R.color.waiting_text_secondary));
+        return editText;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }

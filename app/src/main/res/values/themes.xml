@@ -6,4 +6,14 @@
     </style>
 
     <style name="Theme.BoardGame" parent="Base.Theme.BoardGame" />
+
+    <style name="BoardTile">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:background">@drawable/tile_background</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">#111111</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
 </resources>

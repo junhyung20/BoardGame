@@ -5,14 +5,8 @@
     <string name="title_join_button">게임 참여\n(Room List)</string>
     <string name="title_options_button">옵션</string>
     <string name="title_rules_button">Rules / How to play</string>
-    <string name="title_rules_title">Main Game Rules</string>
-    <string name="title_rules_text">1) 각 턴에 주사위를 굴려 칸을 이동합니다.\n2) 이동 후 칸 효과 및 미니게임 결과가 적용됩니다.\n3) 마지막 까지 남아 있는 플레이어가 승리합니다.\n(상세 룰은 추후 자료 받은 후 교체 예정)</string>
     <string name="rules_prev">이전</string>
     <string name="rules_next">다음</string>
-    <string-array name="title_rules_pages">
-        <item>규칙 문서에서 추출한 내용을 여기에 넣을 예정입니다.\n\n현재는 페이지 UI만 우선 적용되어 있습니다.</item>
-        <item>문서 원문을 프로젝트 경로로 옮겨주시면,\n실제 룰 문장으로 교체해드릴게요.</item>
-    </string-array>
     <string name="title_nickname_format">닉네임: %1$s</string>
     <string-array name="title_rules_pages_v2">
         <item>[1] 게임 소개\n불편마불은 2~4인이 함께 플레이하는 멀티플레이 보드게임입니다.\n플레이어는 보드판 이동과 미니게임 경쟁으로 점수를 얻고,\n총 3라운드 종료 후 최고 점수 플레이어가 승리합니다.</item>
@@ -28,29 +22,40 @@
         <item>[11] 승리 조건\n3라운드 종료 후 최고 점수 플레이어 승리.\n동점일 경우:\n1) 미니게임 1위 횟수\n2) 평균 미니게임 순위\n3) 마지막 미니게임 순위\n그래도 같으면 공동 승리</item>
         <item>[12] 게임 특징\n- 불편한 UI 기믹\n- 빠른 멀티플레이 진행\n- 카드 + 랜덤 이벤트 중심\n- 미니게임 경쟁 요소\n- 점수 기반 승리 시스템</item>
     </string-array>
-    <string name="nickname_splash_title">닉네임 설정</string>
-    <string name="nickname_splash_subtitle">Moving to the nickname screen...</string>
-    <string name="nickname_title">닉네임 설정</string>
-    <string name="nickname_guide">Set once, then return to title screen.</string>
+    <string name="nickname_title">게스트 로그인</string>
+    <string name="nickname_guide">닉네임을 정하고 바로 방 목록으로 이동합니다.</string>
+    <string name="nickname_edit_title">닉네임 변경</string>
+    <string name="nickname_edit_guide">현재 게스트 프로필 이름을 수정합니다.</string>
     <string name="nickname_hint">닉네임을 입력하세요</string>
-    <string name="nickname_save_button">Save and return</string>
+    <string name="nickname_save_button">게스트로 시작</string>
+    <string name="nickname_update_button">닉네임 저장</string>
+    <string name="login_provider_guest">게스트</string>
+    <string name="login_provider_google">Google</string>
+    <string name="login_provider_play_games">Play Games</string>
+    <string name="login_provider_later">추후 지원</string>
     <string name="error_nickname_required">닉네임을 입력해 주세요.</string>
-    <string name="lobby_list_create">방 생성</string>
-    <string name="lobby_list_refresh">새로고침</string>
+    <string name="lobby_list_create">생성</string>
     <string name="lobby_list_back_title">나가기</string>
+    <string name="lobby_list_title">방 목록</string>
+    <string name="lobby_list_subtitle">자동으로 갱신됩니다.\n방을 선택하거나 코드로 입장하세요.</string>
+    <string name="lobby_list_empty">현재 입장 가능한 방이 없습니다.</string>
     <string name="lobby_list_code_hint">방 코드 입력 (예 111111)</string>
     <string name="lobby_list_password_hint">비밀번호 (선택)</string>
-    <string name="lobby_list_join_code">코드 입장</string>
+    <string name="lobby_list_join_code">코드입장</string>
     <string name="lobby_list_code_required">방 코드를 입력하세요.</string>
-    <string name="lobby_list_code_not_found">해당 코드의 방을 찾을 수 없습니다.</string>
+    <string name="lobby_list_create_dialog_title">방 생성</string>
+    <string name="lobby_list_join_dialog_title">방 입장</string>
+    <string name="lobby_list_room_code_label">방 코드: %1$s</string>
+    <string name="lobby_list_dialog_create">생성</string>
+    <string name="lobby_list_dialog_join">입장</string>
+    <string name="lobby_list_dialog_cancel">취소</string>
     <string name="room_host_format">방장: %1$s</string>
     <string name="room_count_format">인원 %1$d/%2$d</string>
     <string name="lobby_header">대기방</string>
     <string name="lobby_room_code">방 코드: %1$s</string>
     <string name="lobby_room_meta">인원 %1$d/%2$d • 준비 %3$d명</string>
     <string name="lobby_slot_host_format">[방장] %1$s</string>
-    <string name="lobby_slot_waiting_name">입장 대기...</string>
-    <string name="lobby_status_waiting">입장 대기</string>
+    <string name="lobby_status_waiting">준비중</string>
     <string name="lobby_status_ready">준비완료</string>
     <string name="lobby_start_button">시작</string>
     <string name="lobby_start_loading">Moving to board...</string>

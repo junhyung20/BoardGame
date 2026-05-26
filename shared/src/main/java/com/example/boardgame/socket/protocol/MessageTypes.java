@@ -3,7 +3,6 @@ package com.example.boardgame.socket.protocol;
 public final class MessageTypes {
     public static final String CREATE_ROOM = "CREATE_ROOM";
     public static final String JOIN_ROOM = "JOIN_ROOM";
-    public static final String MATCHMAKE = "MATCHMAKE";
     public static final String LEAVE_ROOM = "LEAVE_ROOM";
     public static final String SET_READY = "SET_READY";
     public static final String START_GAME = "START_GAME";
@@ -20,7 +19,6 @@ public final class MessageTypes {
     public static final String LOBBY_UPDATED = "LOBBY_UPDATED";
     public static final String ROOM_UPDATED = "ROOM_UPDATED";
     public static final String GAME_UPDATED = "GAME_UPDATED";
-    public static final String SERVER_NOTICE = "SERVER_NOTICE";
 
     public static final String APP_PING = "APP_PING";
     public static final String APP_PONG = "APP_PONG";

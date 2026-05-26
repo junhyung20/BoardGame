@@ -6,8 +6,8 @@ import com.example.boardgame.server.model.Player;
 import com.example.boardgame.server.model.Room;
 
 public class MicroGameService {
-    public static final int MICRO_GAME_DURATION_MILLIS = 10_000;
-    public static final int SUBMISSION_GRACE_MILLIS = 2_000;
+    public static final int MICRO_GAME_DURATION_MILLIS = 20_000;
+    public static final int SUBMISSION_GRACE_MILLIS = 3_000;
     public static final int MAX_SUBMITTED_SCORE = 1_000_000;
 
     private final BoardGameService boardGameService;

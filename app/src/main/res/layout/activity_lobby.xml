@@ -4,17 +4,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/waiting_bg"
-    android:padding="18dp">
+    android:fitsSystemWindows="true"
+    android:paddingHorizontal="@dimen/lobby_screen_padding_horizontal"
+    android:paddingVertical="@dimen/lobby_screen_padding_vertical">
 
     <LinearLayout
         android:id="@+id/roomInfoRow"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_panel_waiting"
+        android:elevation="1dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
+        android:paddingHorizontal="@dimen/lobby_panel_padding_horizontal"
+        android:paddingVertical="@dimen/lobby_panel_padding_vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -24,6 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/lobby_header"
+            android:includeFontPadding="false"
             android:textColor="@color/waiting_text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -37,6 +41,7 @@
             android:id="@+id/roomCodeText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:includeFontPadding="false"
             android:textColor="@color/waiting_text_secondary"
             android:textSize="15sp" />
     </LinearLayout>
@@ -56,8 +61,8 @@
         android:id="@+id/playerGridContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="10dp"
+        android:layout_marginTop="@dimen/lobby_grid_top_margin"
+        android:layout_marginBottom="@dimen/lobby_grid_bottom_margin"
         android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@id/startHintText"
         app:layout_constraintEnd_toEndOf="parent"
@@ -65,144 +70,185 @@
         app:layout_constraintTop_toBottomOf="@id/roomMetaText">
 
         <LinearLayout
+            android:id="@+id/slotRow1"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/slot1Card"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/bg_panel_waiting"
+                android:elevation="1dp"
                 android:gravity="center_vertical"
-                android:orientation="vertical"
-                android:paddingHorizontal="16dp">
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/lobby_slot_padding_horizontal"
+                android:paddingVertical="@dimen/lobby_slot_padding_vertical">
 
                 <TextView
                     android:id="@+id/slot1Name"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@color/waiting_text_primary"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/lobby_slot_name_text_size"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/slot1State"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_width="@dimen/lobby_ready_chip_width"
+                    android:layout_height="@dimen/lobby_ready_chip_height"
+                    android:layout_marginStart="@dimen/lobby_ready_chip_margin_start"
                     android:background="@drawable/bg_status_ready"
-                    android:paddingHorizontal="11dp"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@android:color/white"
-                    android:textSize="13sp" />
+                    android:textStyle="bold"
+                    android:textSize="@dimen/lobby_slot_state_text_size" />
             </LinearLayout>
 
             <Space
-                android:layout_width="12dp"
+                android:id="@+id/slotRow1Gap"
+                android:layout_width="@dimen/lobby_slot_gap"
                 android:layout_height="1dp" />
 
             <LinearLayout
+                android:id="@+id/slot2Card"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/bg_panel_waiting"
+                android:elevation="1dp"
                 android:gravity="center_vertical"
-                android:orientation="vertical"
-                android:paddingHorizontal="16dp">
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/lobby_slot_padding_horizontal"
+                android:paddingVertical="@dimen/lobby_slot_padding_vertical">
 
                 <TextView
                     android:id="@+id/slot2Name"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@color/waiting_text_primary"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/lobby_slot_name_text_size"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/slot2State"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_width="@dimen/lobby_ready_chip_width"
+                    android:layout_height="@dimen/lobby_ready_chip_height"
+                    android:layout_marginStart="@dimen/lobby_ready_chip_margin_start"
                     android:background="@drawable/bg_status_waiting"
-                    android:paddingHorizontal="11dp"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@android:color/white"
-                    android:textSize="13sp" />
+                    android:textStyle="bold"
+                    android:textSize="@dimen/lobby_slot_state_text_size" />
             </LinearLayout>
         </LinearLayout>
 
         <Space
+            android:id="@+id/slotRowGap"
             android:layout_width="1dp"
-            android:layout_height="12dp" />
+            android:layout_height="@dimen/lobby_slot_gap" />
 
         <LinearLayout
+            android:id="@+id/slotRow2"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/slot3Card"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/bg_panel_waiting"
+                android:elevation="1dp"
                 android:gravity="center_vertical"
-                android:orientation="vertical"
-                android:paddingHorizontal="16dp">
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/lobby_slot_padding_horizontal"
+                android:paddingVertical="@dimen/lobby_slot_padding_vertical">
 
                 <TextView
                     android:id="@+id/slot3Name"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@color/waiting_text_primary"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/lobby_slot_name_text_size"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/slot3State"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_width="@dimen/lobby_ready_chip_width"
+                    android:layout_height="@dimen/lobby_ready_chip_height"
+                    android:layout_marginStart="@dimen/lobby_ready_chip_margin_start"
                     android:background="@drawable/bg_status_waiting"
-                    android:paddingHorizontal="11dp"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@android:color/white"
-                    android:textSize="13sp" />
+                    android:textStyle="bold"
+                    android:textSize="@dimen/lobby_slot_state_text_size" />
             </LinearLayout>
 
             <Space
-                android:layout_width="12dp"
+                android:id="@+id/slotRow2Gap"
+                android:layout_width="@dimen/lobby_slot_gap"
                 android:layout_height="1dp" />
 
             <LinearLayout
+                android:id="@+id/slot4Card"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/bg_panel_waiting"
+                android:elevation="1dp"
                 android:gravity="center_vertical"
-                android:orientation="vertical"
-                android:paddingHorizontal="16dp">
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/lobby_slot_padding_horizontal"
+                android:paddingVertical="@dimen/lobby_slot_padding_vertical">
 
                 <TextView
                     android:id="@+id/slot4Name"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@color/waiting_text_primary"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/lobby_slot_name_text_size"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/slot4State"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_width="@dimen/lobby_ready_chip_width"
+                    android:layout_height="@dimen/lobby_ready_chip_height"
+                    android:layout_marginStart="@dimen/lobby_ready_chip_margin_start"
                     android:background="@drawable/bg_status_waiting"
-                    android:paddingHorizontal="11dp"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
                     android:textColor="@android:color/white"
-                    android:textSize="13sp" />
+                    android:textStyle="bold"
+                    android:textSize="@dimen/lobby_slot_state_text_size" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
@@ -219,32 +265,55 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/startGameButton"
         android:layout_width="0dp"
-        android:layout_height="54dp"
-        android:background="@drawable/bg_action_primary"
+        android:layout_height="@dimen/lobby_button_height"
+        android:elevation="3dp"
+        android:includeFontPadding="false"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
         android:text="@string/lobby_start_button"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         android:textSize="17sp"
+        app:backgroundTint="@color/primary"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_play_arrow_24"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconSize="22dp"
+        app:iconTint="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/leaveRoomButton"
         app:layout_constraintHorizontal_weight="1"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:rippleColor="@color/primary_dark" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/leaveRoomButton"
-        android:layout_width="120dp"
-        android:layout_height="54dp"
+        android:layout_width="138dp"
+        android:layout_height="@dimen/lobby_button_height"
         android:layout_marginStart="10dp"
-        android:background="@drawable/bg_action_secondary"
+        android:elevation="1dp"
+        android:includeFontPadding="false"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:paddingHorizontal="10dp"
         android:text="@string/lobby_leave_button"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
-        android:textSize="16sp"
+        android:textSize="15sp"
+        app:backgroundTint="#64748B"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_logout_24"
+        app:iconGravity="textStart"
+        app:iconPadding="6dp"
+        app:iconSize="20dp"
+        app:iconTint="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/startGameButton" />
+        app:layout_constraintStart_toEndOf="@id/startGameButton"
+        app:rippleColor="#475569" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

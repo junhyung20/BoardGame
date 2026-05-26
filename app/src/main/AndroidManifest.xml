@@ -15,11 +15,36 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BoardGame">
         <activity
-            android:name=".MainActivity"
-            android:exported="false" />
-        <activity
             android:name=".BoardActivity"
             android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
+            android:name=".DiceActivity"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
+            android:name=".AdGame1Activity"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
+            android:name=".AdGame2Activity"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
+            android:name=".AdGame3Activity"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
+            android:name=".CaptchaActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+        <activity
+            android:name=".PasswordActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
+        <activity
+            android:name=".VolumeMazeActivity"
+            android:screenOrientation="portrait"
             android:exported="false" />
         <activity
             android:name=".LobbyActivity"
@@ -35,10 +60,6 @@
             android:exported="false" />
         <activity
             android:name=".NicknameActivity"
-            android:screenOrientation="landscape"
-            android:exported="false" />
-        <activity
-            android:name=".SplashActivity"
             android:screenOrientation="landscape"
             android:exported="false" />
         <activity

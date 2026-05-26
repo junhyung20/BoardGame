@@ -37,10 +37,14 @@ public class TitleActivity extends AppCompatActivity {
 
     private void onJoinGameClicked() {
         String nickname = SessionPrefs.getNickname(this);
-        Class<?> destination = nickname == null || nickname.trim().isEmpty()
-                ? SplashActivity.class
-                : LobbyListActivity.class;
-        startActivity(new Intent(this, destination));
+        if (nickname == null || nickname.trim().isEmpty()) {
+            Intent intent = new Intent(this, NicknameActivity.class);
+            intent.putExtra(NicknameActivity.EXTRA_OPEN_LOBBY_AFTER_LOGIN, true);
+            startActivity(intent);
+            return;
+        }
+
+        startActivity(new Intent(this, LobbyListActivity.class));
     }
 
     private void renderNickname() {

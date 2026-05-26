@@ -12,8 +12,6 @@ public class SocketRoomController {
 
     private final BoardGameSocketClient socketClient;
 
-    private volatile boolean waitingRollResponse = false;
-
     public SocketRoomController() {
         this(new BoardGameSocketClient());
     }
@@ -31,16 +29,11 @@ public class SocketRoomController {
     }
 
     public void disconnect() {
-        waitingRollResponse = false;
         socketClient.disconnect();
     }
 
     public boolean isConnected() {
         return socketClient.getState() == ConnectionState.CONNECTED;
-    }
-
-    public void createRoom(String nickname, String firebaseIdToken) {
-        createRoom(nickname, firebaseIdToken, "");
     }
 
     public void createRoom(String nickname, String firebaseIdToken, String roomPassword) {
@@ -51,22 +44,11 @@ public class SocketRoomController {
         );
     }
 
-    public void joinRoom(String roomCode, String nickname, String firebaseIdToken) {
-        joinRoom(roomCode, nickname, firebaseIdToken, "");
-    }
-
     public void joinRoom(String roomCode, String nickname, String firebaseIdToken, String roomPassword) {
         socketClient.send(
                 commandBuilder(MessageTypes.JOIN_ROOM, nickname, firebaseIdToken)
                         .put("roomCode", roomCode)
                         .put("roomPassword", roomPassword)
-                        .build()
-        );
-    }
-
-    public void matchmake(String nickname, String firebaseIdToken) {
-        socketClient.send(
-                commandBuilder(MessageTypes.MATCHMAKE, nickname, firebaseIdToken)
                         .build()
         );
     }
@@ -96,22 +78,13 @@ public class SocketRoomController {
         );
     }
 
-    public void rollDice() {
-        if (waitingRollResponse) {
-            return;
-        }
-
-        waitingRollResponse = true;
-
+    public void rollDice(int diceRoll) {
         socketClient.send(
                 SocketMessage.builder(MessageTypes.ROLL_DICE)
                         .requestId(UUID.randomUUID().toString())
+                        .put("diceRoll", diceRoll)
                         .build()
         );
-    }
-
-    public void onRollResponseReceived() {
-        waitingRollResponse = false;
     }
 
     public void applyTileEffect() {

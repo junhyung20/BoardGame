@@ -8,6 +8,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,6 +56,11 @@ public class RoomListAdapter extends RecyclerView.Adapter<RoomListAdapter.RoomVi
                 listener.onRoomClicked(room);
             }
         });
+        holder.joinButton.setOnClickListener(view -> {
+            if (listener != null) {
+                listener.onRoomClicked(room);
+            }
+        });
     }
 
     @Override
@@ -65,12 +72,14 @@ public class RoomListAdapter extends RecyclerView.Adapter<RoomListAdapter.RoomVi
         final TextView codeText;
         final TextView hostText;
         final TextView countText;
+        final MaterialButton joinButton;
 
         RoomViewHolder(@NonNull View itemView) {
             super(itemView);
             codeText = itemView.findViewById(R.id.roomItemCode);
             hostText = itemView.findViewById(R.id.roomItemHost);
             countText = itemView.findViewById(R.id.roomItemCount);
+            joinButton = itemView.findViewById(R.id.roomItemJoin);
         }
     }
 }

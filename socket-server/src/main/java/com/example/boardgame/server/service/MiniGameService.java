@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 public class MiniGameService {
-    public static final int MINI_GAME_DURATION_MILLIS = 30_000;
-    public static final int SUBMISSION_GRACE_MILLIS = 3_000;
+    public static final int MINI_GAME_DURATION_MILLIS = 240_000;
+    public static final int SUBMISSION_GRACE_MILLIS = 5_000;
     public static final int[] MINI_GAME_SCORE_BY_RANK = {30, 20, 10, 5};
     public static final int MAX_SUBMITTED_SCORE = 1_000_000;
 

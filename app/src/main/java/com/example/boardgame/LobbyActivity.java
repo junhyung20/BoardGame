@@ -1,5 +1,7 @@
 package com.example.boardgame;
 
+import android.animation.ObjectAnimator;
+import android.content.res.ColorStateList;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,7 +25,6 @@ import java.util.List;
 public class LobbyActivity extends AppCompatActivity {
     public static final String EXTRA_MY_NICKNAME = "extra_my_nickname";
     public static final String EXTRA_ROOM_CODE = "extra_room_code";
-    public static final String EXTRA_LEFT_ROOM_CODE = "extra_left_room_code";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private TextView roomCodeText;
@@ -40,6 +41,11 @@ public class LobbyActivity extends AppCompatActivity {
     private TextView[] slotNameViews;
     private TextView[] slotStateViews;
     private View[] slotCards;
+    private View slotRow1;
+    private View slotRow2;
+    private View slotRowGap;
+    private View slotRow1Gap;
+    private View slotRow2Gap;
 
     private final ServerSession.Listener serverListener = new ServerSession.Listener() {
         @Override
@@ -103,11 +109,16 @@ public class LobbyActivity extends AppCompatActivity {
                 findViewById(R.id.slot4State)
         };
         slotCards = new View[]{
-                (View) slotNameViews[0].getParent(),
-                (View) slotNameViews[1].getParent(),
-                (View) slotNameViews[2].getParent(),
-                (View) slotNameViews[3].getParent()
+                findViewById(R.id.slot1Card),
+                findViewById(R.id.slot2Card),
+                findViewById(R.id.slot3Card),
+                findViewById(R.id.slot4Card)
         };
+        slotRow1 = findViewById(R.id.slotRow1);
+        slotRow2 = findViewById(R.id.slotRow2);
+        slotRowGap = findViewById(R.id.slotRowGap);
+        slotRow1Gap = findViewById(R.id.slotRow1Gap);
+        slotRow2Gap = findViewById(R.id.slotRow2Gap);
 
         myNickname = getIntent().getStringExtra(EXTRA_MY_NICKNAME);
         if (myNickname == null || myNickname.trim().isEmpty()) {
@@ -199,7 +210,7 @@ public class LobbyActivity extends AppCompatActivity {
         renderSlots(slots);
         roomMetaText.setText(getString(R.string.lobby_room_meta, 0, 4, 0));
         startButton.setEnabled(false);
-        startButton.setBackgroundResource(R.drawable.bg_action_secondary);
+        renderStartButtonVisualState(false, false);
     }
 
     private void renderSlots(List<PlayerSlot> slots) {
@@ -208,10 +219,20 @@ public class LobbyActivity extends AppCompatActivity {
             TextView nameView = slotNameViews[i];
             TextView stateView = slotStateViews[i];
             View cardView = slotCards[i];
+            cardView.setVisibility(View.VISIBLE);
+            boolean occupied = !slot.nickname.isEmpty();
+            if (!occupied) {
+                nameView.setText("");
+                stateView.setVisibility(View.GONE);
+                stateView.setOnClickListener(null);
+                cardView.setAlpha(0.45f);
+                cardView.setTranslationY(0f);
+                cardView.setTranslationX(0f);
+                continue;
+            }
 
-            if (slot.nickname.isEmpty()) {
-                nameView.setText(getString(R.string.lobby_slot_waiting_name));
-            } else if (slot.host) {
+            stateView.setVisibility(View.VISIBLE);
+            if (slot.host) {
                 nameView.setText(getString(R.string.lobby_slot_host_format, slot.nickname));
             } else {
                 nameView.setText(slot.nickname);
@@ -225,10 +246,14 @@ public class LobbyActivity extends AppCompatActivity {
                 stateView.setOnClickListener(null);
             }
 
-            cardView.setAlpha(0.80f);
-            cardView.setTranslationY(10f);
-            cardView.animate().alpha(1.0f).translationY(0f).setDuration(220L).start();
+            cardView.setAlpha(1.0f);
+            cardView.setTranslationY(0f);
         }
+        slotRow1.setVisibility(View.VISIBLE);
+        slotRow2.setVisibility(View.VISIBLE);
+        slotRowGap.setVisibility(View.VISIBLE);
+        slotRow1Gap.setVisibility(View.VISIBLE);
+        slotRow2Gap.setVisibility(View.VISIBLE);
     }
 
     private void updateRoomMeta(RoomSnapshot room) {
@@ -248,12 +273,12 @@ public class LobbyActivity extends AppCompatActivity {
             startButton.setEnabled(false);
             startButton.setText(getString(R.string.lobby_start_loading));
             startHintText.setText(getString(R.string.lobby_start_hint_loading));
-            startButton.setBackgroundResource(R.drawable.bg_action_secondary);
+            renderStartButtonVisualState(false, true);
             return;
         }
         startButton.setEnabled(canStart);
         startButton.setText(getString(R.string.lobby_start_button));
-        startButton.setBackgroundResource(canStart ? R.drawable.bg_action_primary : R.drawable.bg_action_secondary);
+        renderStartButtonVisualState(canStart, false);
         if (canStart) {
             startHintText.setText(getString(R.string.lobby_start_hint_ready));
         } else if (me != null && me.isHost()) {
@@ -263,6 +288,17 @@ public class LobbyActivity extends AppCompatActivity {
         }
     }
 
+    private void renderStartButtonVisualState(boolean canStart, boolean starting) {
+        int color = canStart ? getColor(R.color.primary) : getColor(R.color.status_waiting_bg);
+        startButton.setBackgroundTintList(ColorStateList.valueOf(color));
+        startButton.setAlpha(starting ? 0.78f : 1.0f);
+        startButton.setElevation(canStart ? dp(5) : dp(1));
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
     private void toggleMyReady() {
         RoomSnapshot room = ServerSession.getLatestRoomSnapshot();
         if (room == null || !room.getCode().equalsIgnoreCase(roomCode)) {
@@ -270,7 +306,31 @@ public class LobbyActivity extends AppCompatActivity {
         }
         PlayerSnapshot me = findMe(room);
         if (me != null) {
+            animateMySlot(me.getId(), room);
             ServerSession.setReady(!me.isReady());
+        }
+    }
+
+    private void animateMySlot(String playerId, RoomSnapshot room) {
+        for (int i = 0; i < room.getPlayers().size() && i < slotCards.length; i++) {
+            if (!room.getPlayers().get(i).getId().equals(playerId)) {
+                continue;
+            }
+            View card = slotCards[i];
+            card.animate().cancel();
+            ObjectAnimator animator = ObjectAnimator.ofFloat(
+                    card,
+                    View.TRANSLATION_X,
+                    0f,
+                    -dp(3),
+                    dp(3),
+                    -dp(2),
+                    dp(2),
+                    0f
+            );
+            animator.setDuration(180L);
+            animator.start();
+            return;
         }
     }
 
@@ -310,7 +370,6 @@ public class LobbyActivity extends AppCompatActivity {
         }
         leavingLobby = true;
         ServerSession.leaveRoom();
-        setResult(RESULT_OK, new Intent().putExtra(EXTRA_LEFT_ROOM_CODE, roomCode));
         finish();
     }
 

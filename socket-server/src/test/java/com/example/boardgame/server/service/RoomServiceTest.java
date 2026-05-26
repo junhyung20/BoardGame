@@ -184,14 +184,15 @@ public class RoomServiceTest {
     }
 
     @Test
-    public void matchmakeSkipsPasswordRooms() {
+    public void cleanupRemovesStaleWaitingRoom() {
         RoomService roomService = new RoomService();
-        Room lockedRoom = roomService.createRoom("uid-1", "Host", "secret");
+        Room room = roomService.createRoom("uid-1", "Host");
 
-        RoomService.MatchResult matchResult = roomService.matchmake("uid-2", "Guest");
+        RoomService.CleanupResult result = roomService.cleanupStaleRooms(
+                room.getUpdatedAtMillis() + RoomService.WAITING_ROOM_STALE_MILLIS + 1
+        );
 
-        assertFalse(lockedRoom.getCode().equals(matchResult.getRoom().getCode()));
-        assertEquals(1, lockedRoom.getPlayers().size());
-        assertEquals(1, matchResult.getRoom().getPlayers().size());
+        assertTrue(result.hasChanges());
+        assertTrue(result.getRemovedRoomCodes().contains(room.getCode()));
     }
 }

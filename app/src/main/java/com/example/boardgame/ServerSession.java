@@ -16,6 +16,8 @@ import com.example.boardgame.socket.protocol.SnapshotMessageMapper;
 import com.example.boardgame.socket.protocol.SocketEventListener;
 import com.example.boardgame.socket.protocol.SocketMessage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -60,19 +62,16 @@ public final class ServerSession {
     private static volatile String currentRoomCode = "";
     private static volatile String currentPlayerId = "";
     private static volatile String pendingCommandType = "";
-    private static volatile Runnable pendingConnectedAction;
+    private static volatile long connectionGeneration = 0L;
 
     static {
         CONTROLLER.setListener(new SocketEventListener() {
             @Override
             public void onStateChanged(ConnectionState state) {
                 connectionState = state;
-                if (state == ConnectionState.CONNECTED) {
-                    Runnable action = pendingConnectedAction;
-                    pendingConnectedAction = null;
-                    if (action != null) {
-                        action.run();
-                    }
+                if (state == ConnectionState.DISCONNECTED) {
+                    connectionGeneration += 1;
+                    pendingCommandType = "";
                 }
                 dispatch(listener -> listener.onConnectionStateChanged(state));
             }
@@ -84,6 +83,7 @@ public final class ServerSession {
 
             @Override
             public void onError(Throwable throwable) {
+                pendingCommandType = "";
                 String details = throwable == null ? "Socket error" : throwable.getMessage();
                 dispatch(listener -> listener.onServerError("CLIENT_SOCKET_ERROR", details));
             }
@@ -103,10 +103,6 @@ public final class ServerSession {
         if (listener != null) {
             LISTENERS.remove(listener);
         }
-    }
-
-    public static ConnectionState getConnectionState() {
-        return connectionState;
     }
 
     public static LobbySnapshot getLatestLobbySnapshot() {
@@ -164,49 +160,49 @@ public final class ServerSession {
         if (connectionState == ConnectionState.CONNECTED || connectionState == ConnectionState.CONNECTING) {
             return;
         }
+        connectionGeneration += 1;
         CONTROLLER.connect(getServerUrl(context));
     }
 
     public static void disconnect() {
-        pendingConnectedAction = null;
-        currentRoomCode = "";
-        currentPlayerId = "";
-        latestRoomSnapshot = null;
-        latestGameSnapshot = null;
+        connectionGeneration += 1;
+        pendingCommandType = "";
+        clearRoomState();
         CONTROLLER.disconnect();
     }
 
-    public static void createRoom(Context context, String nickname, String roomPassword) {
-        runWhenConnected(context, () -> withIdToken(context, token -> {
+    public static boolean createRoom(Context context, String nickname, String roomPassword) {
+        return runWhenConnected(context, generation -> withIdToken(context, token -> {
+            if (!isSameConnectedSession(generation)) {
+                notifyNotConnected();
+                return;
+            }
             pendingCommandType = MessageTypes.CREATE_ROOM;
             CONTROLLER.createRoom(nickname, token, roomPassword);
         }));
     }
 
-    public static void joinRoom(Context context, String roomCode, String nickname, String roomPassword) {
-        runWhenConnected(context, () -> withIdToken(context, token -> {
+    public static boolean joinRoom(Context context, String roomCode, String nickname, String roomPassword) {
+        return runWhenConnected(context, generation -> withIdToken(context, token -> {
+            if (!isSameConnectedSession(generation)) {
+                notifyNotConnected();
+                return;
+            }
             pendingCommandType = MessageTypes.JOIN_ROOM;
             CONTROLLER.joinRoom(roomCode, nickname, token, roomPassword);
         }));
     }
 
-    public static void matchmake(Context context, String nickname) {
-        runWhenConnected(context, () -> withIdToken(context, token -> {
-            pendingCommandType = MessageTypes.MATCHMAKE;
-            CONTROLLER.matchmake(nickname, token);
-        }));
-    }
-
     public static void leaveRoom() {
-        if (!CONTROLLER.isConnected()) {
-            return;
+        String leavingRoomCode = currentRoomCode;
+        if (CONTROLLER.isConnected()) {
+            pendingCommandType = MessageTypes.LEAVE_ROOM;
+            CONTROLLER.leaveRoom();
+        } else {
+            pendingCommandType = "";
         }
-        pendingCommandType = MessageTypes.LEAVE_ROOM;
-        CONTROLLER.leaveRoom();
-        currentRoomCode = "";
-        currentPlayerId = "";
-        latestRoomSnapshot = null;
-        latestGameSnapshot = null;
+        clearRoomState();
+        removeRoomFromLatestLobby(leavingRoomCode);
     }
 
     public static void setReady(boolean ready) {
@@ -225,12 +221,28 @@ public final class ServerSession {
         CONTROLLER.startGame();
     }
 
-    public static void rollDice() {
+    public static void rollDice(int diceRoll) {
         if (!CONTROLLER.isConnected()) {
             return;
         }
         pendingCommandType = MessageTypes.ROLL_DICE;
-        CONTROLLER.rollDice();
+        CONTROLLER.rollDice(diceRoll);
+    }
+
+    public static void applyTileEffect() {
+        if (!CONTROLLER.isConnected()) {
+            return;
+        }
+        pendingCommandType = MessageTypes.APPLY_TILE_EFFECT;
+        CONTROLLER.applyTileEffect();
+    }
+
+    public static void startMiniGame(String miniGameType) {
+        if (!CONTROLLER.isConnected()) {
+            return;
+        }
+        pendingCommandType = MessageTypes.START_MINI_GAME;
+        CONTROLLER.startMiniGame(miniGameType);
     }
 
     public static void submitMiniGameScore(int score) {
@@ -241,6 +253,14 @@ public final class ServerSession {
         CONTROLLER.submitMiniGameScore(score);
     }
 
+    public static void finishMiniGame() {
+        if (!CONTROLLER.isConnected()) {
+            return;
+        }
+        pendingCommandType = MessageTypes.FINISH_MINI_GAME;
+        CONTROLLER.finishMiniGame();
+    }
+
     public static void submitMicroGameScore(int score) {
         if (!CONTROLLER.isConnected()) {
             return;
@@ -249,13 +269,29 @@ public final class ServerSession {
         CONTROLLER.submitMicroGameScore(score);
     }
 
-    private static void runWhenConnected(Context context, Runnable action) {
+    private static boolean runWhenConnected(Context context, ConnectedAction action) {
         if (connectionState == ConnectionState.CONNECTED) {
-            action.run();
-            return;
+            action.run(connectionGeneration);
+            return true;
         }
-        pendingConnectedAction = action;
-        connect(context.getApplicationContext());
+        if (connectionState == ConnectionState.DISCONNECTED) {
+            connect(context.getApplicationContext());
+        }
+        pendingCommandType = "";
+        notifyNotConnected();
+        return false;
+    }
+
+    private static boolean isSameConnectedSession(long generation) {
+        return connectionState == ConnectionState.CONNECTED && connectionGeneration == generation;
+    }
+
+    private static void notifyNotConnected() {
+        pendingCommandType = "";
+        dispatch(listener -> listener.onServerError(
+                "CLIENT_NOT_CONNECTED",
+                "서버 연결 후 다시 시도해 주세요."
+        ));
     }
 
     private static void withIdToken(Context context, TokenConsumer consumer) {
@@ -302,14 +338,17 @@ public final class ServerSession {
         if (MessageTypes.REQUEST_OK.equals(type)) {
             String roomCode = message.getOrDefault("roomCode", "");
             String playerId = message.getOrDefault("playerId", "");
+            String commandType = pendingCommandType;
+            pendingCommandType = "";
+            if (MessageTypes.LEAVE_ROOM.equals(commandType)) {
+                clearRoomState();
+            }
             if (!roomCode.isEmpty()) {
                 currentRoomCode = roomCode;
             }
             if (!playerId.isEmpty()) {
                 currentPlayerId = playerId;
             }
-            String commandType = pendingCommandType;
-            pendingCommandType = "";
             dispatch(listener -> listener.onRequestOk(commandType, roomCode, playerId));
             return;
         }
@@ -317,16 +356,43 @@ public final class ServerSession {
             String commandType = pendingCommandType;
             pendingCommandType = "";
             if (MessageTypes.LEAVE_ROOM.equals(commandType)) {
-                currentRoomCode = "";
-                currentPlayerId = "";
-                latestRoomSnapshot = null;
-                latestGameSnapshot = null;
+                clearRoomState();
             }
             dispatch(listener -> listener.onServerError(
                     message.getOrDefault("errorCode", "REQUEST_ERROR"),
                     message.getOrDefault("details", "Request failed")
             ));
         }
+    }
+
+    private static void clearRoomState() {
+        currentRoomCode = "";
+        currentPlayerId = "";
+        latestRoomSnapshot = null;
+        latestGameSnapshot = null;
+    }
+
+    private static void removeRoomFromLatestLobby(String roomCode) {
+        String normalizedRoomCode = roomCode == null ? "" : roomCode.trim();
+        if (normalizedRoomCode.isEmpty() || latestLobbySnapshot == null) {
+            return;
+        }
+
+        List<LobbySnapshot.RoomListInfo> retainedRooms = new ArrayList<>();
+        boolean removed = false;
+        for (LobbySnapshot.RoomListInfo room : latestLobbySnapshot.getRooms()) {
+            if (normalizedRoomCode.equalsIgnoreCase(room.getCode())) {
+                removed = true;
+                continue;
+            }
+            retainedRooms.add(room);
+        }
+        if (!removed) {
+            return;
+        }
+
+        latestLobbySnapshot = new LobbySnapshot(retainedRooms);
+        dispatch(listener -> listener.onLobbyUpdated(latestLobbySnapshot));
     }
 
     private static SharedPreferences prefs(Context context) {
@@ -343,6 +409,10 @@ public final class ServerSession {
 
     private interface DispatchAction {
         void dispatch(Listener listener);
+    }
+
+    private interface ConnectedAction {
+        void run(long generation);
     }
 
     private interface TokenConsumer {

@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BoardGameService {
-    public static final int BOARD_SIZE = 16; // 기획서 기준 16칸
-    public static final int FINAL_ROUND = 3; // 기획서 기준 3라운드
+    public static final int BOARD_SIZE = 16;
+    public static final int FINAL_ROUND = 3;
 
     // 타일 종류 상수 정의 (기획서 매핑용)
     public static final String TILE_START = "START";
@@ -18,8 +18,8 @@ public class BoardGameService {
     public static final String TILE_MINUS_SCORE = "MINUS_SCORE";
     public static final String TILE_CARD = "CARD";
     public static final String TILE_QUESTION = "QUESTION";
-    public static final String TILE_AD = "AD"; // 마이크로 게임(광고) 트리거
-    public static final String TILE_NORMAL = "NORMAL"; // ⚠️ [수정] 누락된 상수 추가
+    public static final String TILE_AD = "AD";
+    public static final String TILE_NORMAL = "NORMAL";
 
     // 카드 종류 상수
     public static final String CARD_DEFENSE = "DEFENSE_CARD";
@@ -49,13 +49,20 @@ public class BoardGameService {
     }
 
     public int rollDice(Room room, String playerId) {
+        return rollDice(room, playerId, 0);
+    }
+
+    public int rollDice(Room room, String playerId, int requestedDiceRoll) {
         GameState gameState = requireGameState(room);
         requireCurrentPlayer(gameState, playerId);
         requirePhase(gameState, GameState.WAITING_FOR_ROLL);
 
         Player player = requirePlayer(room, playerId);
 
-        int diceRoll = 1 + random.nextInt(6);
+        int diceRoll = requestedDiceRoll > 0 ? requestedDiceRoll : 1 + random.nextInt(6);
+        if (diceRoll < 1 || diceRoll > 6) {
+            throw new IllegalArgumentException("Dice roll must be between 1 and 6");
+        }
         player.moveBy(diceRoll, BOARD_SIZE);
         player.addScore(diceRoll);
 
@@ -125,7 +132,6 @@ public class BoardGameService {
     }
 
     public String getTileType(int position) {
-        // ⚠️ [수정] Enhanced switch를 사용하여 가독성을 높이고 TILE_NORMAL 반환 에러 해결
         return switch (position) {
             case 0 -> TILE_START;
             case 1, 3, 5, 11, 15 -> TILE_PLUS_SCORE;

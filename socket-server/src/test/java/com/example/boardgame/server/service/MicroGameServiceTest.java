@@ -46,7 +46,10 @@ public class MicroGameServiceTest {
         room.getPlayer(playerId).setInMicroGame(true);
         room.setMicroGameState(new MicroGameState(
                 playerId,
-                System.currentTimeMillis() - 20_000,
+                System.currentTimeMillis()
+                        - MicroGameService.MICRO_GAME_DURATION_MILLIS
+                        - MicroGameService.SUBMISSION_GRACE_MILLIS
+                        - 1_000,
                 MicroGameService.MICRO_GAME_DURATION_MILLIS,
                 MicroGameService.SUBMISSION_GRACE_MILLIS
         ));

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="golden_keys">
+        <item>방어권 카드</item>
+        <item>10 주사위 카드</item>
+        <item>456 주사위 카드</item>
+        <item>주사위 홀짝 카드</item>
+        <item>광고 스킵 카드</item>
+    </string-array>
+
+    <string-array name="random_events">
+        <item>1등과 점수 교환</item>
+        <item>꼴등과 점수 교환</item>
+        <item>랜덤 플레이어와 위치 교환</item>
+        <item>다음 주사위 값 2배</item>
+        <item>다음 주사위 값 절반</item>
+        <item>점수 +7</item>
+        <item>점수 -7</item>
+        <item>모든 플레이어 점수 2배</item>
+        <item>모든 플레이어 점수 절반</item>
+        <item>자신을 제외한 모든 플레이어 점수 -3</item>
+    </string-array>
+</resources>

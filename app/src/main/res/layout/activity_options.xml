@@ -32,8 +32,11 @@
         android:layout_height="0dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_panel_waiting"
+        android:elevation="1dp"
         android:gravity="center_horizontal"
         android:orientation="vertical"
+        android:padding="14dp"
         app:layout_constraintBottom_toTopOf="@id/closeOptionsButton"
         app:layout_constraintEnd_toStartOf="@id/optionsSplitGuide"
         app:layout_constraintStart_toStartOf="parent"
@@ -57,15 +60,21 @@
             android:orientation="horizontal"
             android:paddingHorizontal="8dp">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/volumeMinusButton"
                 android:layout_width="52dp"
                 android:layout_height="44dp"
-                android:background="@drawable/bg_action_secondary"
+                android:elevation="1dp"
+                android:includeFontPadding="false"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
                 android:text="-"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
-                android:textSize="24sp" />
+                android:textSize="24sp"
+                app:backgroundTint="#64748B"
+                app:cornerRadius="8dp"
+                app:rippleColor="#475569" />
 
             <TextView
                 android:id="@+id/volumeValueText"
@@ -78,15 +87,21 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/volumePlusButton"
                 android:layout_width="52dp"
                 android:layout_height="44dp"
-                android:background="@drawable/bg_action_secondary"
+                android:elevation="1dp"
+                android:includeFontPadding="false"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
                 android:text="+"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
-                android:textSize="24sp" />
+                android:textSize="24sp"
+                app:backgroundTint="#64748B"
+                app:cornerRadius="8dp"
+                app:rippleColor="#475569" />
         </LinearLayout>
 
         <CheckBox
@@ -126,8 +141,11 @@
         android:layout_height="0dp"
         android:layout_marginTop="10dp"
         android:layout_marginStart="8dp"
+        android:background="@drawable/bg_panel_waiting"
+        android:elevation="1dp"
         android:gravity="center_horizontal"
         android:orientation="vertical"
+        android:padding="14dp"
         app:layout_constraintBottom_toTopOf="@id/closeOptionsButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/optionsSplitGuide"
@@ -157,16 +175,22 @@
             android:textColorHint="@color/waiting_text_secondary"
             android:textSize="13sp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/saveServerUrlButton"
             android:layout_width="130dp"
             android:layout_height="40dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_action_secondary"
+            android:elevation="1dp"
+            android:includeFontPadding="false"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
             android:text="@string/options_server_url_save"
             android:textAllCaps="false"
             android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            app:backgroundTint="#64748B"
+            app:cornerRadius="8dp"
+            app:rippleColor="#475569" />
 
         <LinearLayout
             android:id="@+id/serverPresetRow"
@@ -175,31 +199,45 @@
             android:layout_marginTop="8dp"
             android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/useLanServerButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/bg_action_secondary"
+                android:elevation="1dp"
+                android:includeFontPadding="false"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
                 android:text="@string/options_server_lan"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
-                android:textSize="13sp" />
+                android:textSize="13sp"
+                app:backgroundTint="#64748B"
+                app:cornerRadius="8dp"
+                app:rippleColor="#475569" />
 
             <Space
                 android:layout_width="8dp"
                 android:layout_height="1dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/useWanServerButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/bg_action_secondary"
+                android:elevation="1dp"
+                android:includeFontPadding="false"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
                 android:text="@string/options_server_wan"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
-                android:textSize="13sp" />
+                android:textSize="13sp"
+                app:backgroundTint="#64748B"
+                app:cornerRadius="8dp"
+                app:rippleColor="#475569" />
         </LinearLayout>
 
         <RadioGroup
@@ -237,19 +275,25 @@
             android:textSize="15sp" />
     </LinearLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/closeOptionsButton"
         android:layout_width="200dp"
         android:layout_height="44dp"
         android:layout_marginBottom="2dp"
-        android:background="@drawable/bg_title_option_button"
+        android:elevation="2dp"
+        android:includeFontPadding="false"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
         android:text="@string/options_close_button"
         android:textAllCaps="false"
         android:textColor="#1E1E1E"
         android:textSize="16sp"
         android:textStyle="bold"
+        app:backgroundTint="@color/title_yellow"
+        app:cornerRadius="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:rippleColor="@color/title_yellow_pressed" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,47 +1,314 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/waiting_bg"
-    android:padding="22dp">
+    android:background="@color/board_green"
+    android:padding="8dp">
 
-    <TextView
-        android:id="@+id/boardTitleText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/board_screen_title"
-        android:textColor="@color/waiting_text_primary"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/boardCountdownText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textColor="@color/waiting_text_secondary"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/boardTitleText" />
-
-    <TextView
-        android:id="@+id/boardPlayersText"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/boardArea"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="14dp"
-        android:background="@drawable/bg_panel_waiting"
-        android:padding="16dp"
-        android:textColor="@color/waiting_text_primary"
-        android:textSize="19sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.64"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/boardCountdownText" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.68">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_v1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.2" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_v2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.4" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_v3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.6" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_v4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.8" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_h1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.2" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_h2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.4" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_h3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.6" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/g_h4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.8" />
+
+        <TextView
+            android:id="@+id/tile0"
+            style="@style/BoardTile"
+            android:text="시작"
+            app:layout_constraintBottom_toTopOf="@id/g_h1"
+            app:layout_constraintEnd_toEndOf="@id/g_v1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tile1"
+            style="@style/BoardTile"
+            android:text="점수 +"
+            app:layout_constraintBottom_toTopOf="@id/g_h1"
+            app:layout_constraintEnd_toEndOf="@id/g_v2"
+            app:layout_constraintStart_toEndOf="@id/g_v1"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tile2"
+            style="@style/BoardTile"
+            android:text="카드"
+            app:layout_constraintBottom_toTopOf="@id/g_h1"
+            app:layout_constraintEnd_toEndOf="@id/g_v3"
+            app:layout_constraintStart_toEndOf="@id/g_v2"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tile3"
+            style="@style/BoardTile"
+            android:text="점수 +"
+            app:layout_constraintBottom_toTopOf="@id/g_h1"
+            app:layout_constraintEnd_toEndOf="@id/g_v4"
+            app:layout_constraintStart_toEndOf="@id/g_v3"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tile4"
+            style="@style/BoardTile"
+            android:text="?"
+            app:layout_constraintBottom_toTopOf="@id/g_h1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/g_v4"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tile5"
+            style="@style/BoardTile"
+            android:text="점수 -"
+            app:layout_constraintBottom_toTopOf="@id/g_h2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/g_v4"
+            app:layout_constraintTop_toBottomOf="@id/g_h1" />
+
+        <TextView
+            android:id="@+id/tile6"
+            style="@style/BoardTile"
+            android:text="광고"
+            app:layout_constraintBottom_toTopOf="@id/g_h3"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/g_v4"
+            app:layout_constraintTop_toBottomOf="@id/g_h2" />
+
+        <TextView
+            android:id="@+id/tile7"
+            style="@style/BoardTile"
+            android:text="점수 +"
+            app:layout_constraintBottom_toTopOf="@id/g_h4"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/g_v4"
+            app:layout_constraintTop_toBottomOf="@id/g_h3" />
+
+        <TextView
+            android:id="@+id/tile8"
+            style="@style/BoardTile"
+            android:text="?"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/g_v4"
+            app:layout_constraintTop_toBottomOf="@id/g_h4" />
+
+        <TextView
+            android:id="@+id/tile9"
+            style="@style/BoardTile"
+            android:text="점수 -"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/g_v4"
+            app:layout_constraintStart_toEndOf="@id/g_v3"
+            app:layout_constraintTop_toBottomOf="@id/g_h4" />
+
+        <TextView
+            android:id="@+id/tile10"
+            style="@style/BoardTile"
+            android:text="카드"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/g_v3"
+            app:layout_constraintStart_toEndOf="@id/g_v2"
+            app:layout_constraintTop_toBottomOf="@id/g_h4" />
+
+        <TextView
+            android:id="@+id/tile11"
+            style="@style/BoardTile"
+            android:text="점수 +"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/g_v2"
+            app:layout_constraintStart_toEndOf="@id/g_v1"
+            app:layout_constraintTop_toBottomOf="@id/g_h4" />
+
+        <TextView
+            android:id="@+id/tile12"
+            style="@style/BoardTile"
+            android:text="?"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/g_v1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/g_h4" />
+
+        <TextView
+            android:id="@+id/tile13"
+            style="@style/BoardTile"
+            android:text="점수 -"
+            app:layout_constraintBottom_toTopOf="@id/g_h4"
+            app:layout_constraintEnd_toEndOf="@id/g_v1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/g_h3" />
+
+        <TextView
+            android:id="@+id/tile14"
+            style="@style/BoardTile"
+            android:text="광고"
+            app:layout_constraintBottom_toTopOf="@id/g_h3"
+            app:layout_constraintEnd_toEndOf="@id/g_v1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/g_h2" />
+
+        <TextView
+            android:id="@+id/tile15"
+            style="@style/BoardTile"
+            android:text="점수 +"
+            app:layout_constraintBottom_toTopOf="@id/g_h2"
+            app:layout_constraintEnd_toEndOf="@id/g_v1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/g_h1" />
+
+        <TextView
+            android:id="@+id/txtDiceVisual"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/dice_shape"
+            android:gravity="center"
+            android:text="?"
+            android:textColor="#000000"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/btnDice"
+            app:layout_constraintEnd_toEndOf="@id/g_v3"
+            app:layout_constraintStart_toEndOf="@id/g_v2"
+            app:layout_constraintTop_toBottomOf="@id/g_h1"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <Button
+            android:id="@+id/btnDice"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:text="주사위"
+            app:layout_constraintBottom_toTopOf="@id/txtTurnInfo"
+            app:layout_constraintEnd_toEndOf="@id/g_v3"
+            app:layout_constraintStart_toEndOf="@id/g_v2"
+            app:layout_constraintTop_toBottomOf="@id/txtDiceVisual" />
+
+        <TextView
+            android:id="@+id/txtTurnInfo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/g_h4"
+            app:layout_constraintEnd_toEndOf="@id/g_v4"
+            app:layout_constraintStart_toEndOf="@id/g_v1"
+            app:layout_constraintTop_toBottomOf="@id/btnDice" />
+
+        <ImageView
+            android:id="@+id/player1"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:elevation="10dp"
+            android:src="@drawable/player_red"
+            android:translationX="-8dp"
+            android:translationY="-8dp"
+            app:layout_constraintBottom_toBottomOf="@id/tile0"
+            app:layout_constraintEnd_toEndOf="@id/tile0"
+            app:layout_constraintStart_toStartOf="@id/tile0"
+            app:layout_constraintTop_toTopOf="@id/tile0" />
+
+        <ImageView
+            android:id="@+id/player2"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:elevation="10dp"
+            android:src="@drawable/player_blue"
+            android:translationX="8dp"
+            android:translationY="-8dp"
+            app:layout_constraintBottom_toBottomOf="@id/tile0"
+            app:layout_constraintEnd_toEndOf="@id/tile0"
+            app:layout_constraintStart_toStartOf="@id/tile0"
+            app:layout_constraintTop_toTopOf="@id/tile0" />
+
+        <ImageView
+            android:id="@+id/player3"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:elevation="10dp"
+            android:src="@drawable/player_green"
+            android:translationX="-8dp"
+            android:translationY="8dp"
+            app:layout_constraintBottom_toBottomOf="@id/tile0"
+            app:layout_constraintEnd_toEndOf="@id/tile0"
+            app:layout_constraintStart_toStartOf="@id/tile0"
+            app:layout_constraintTop_toTopOf="@id/tile0" />
+
+        <ImageView
+            android:id="@+id/player4"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:elevation="10dp"
+            android:src="@drawable/player_yellow"
+            android:translationX="8dp"
+            android:translationY="8dp"
+            app:layout_constraintBottom_toBottomOf="@id/tile0"
+            app:layout_constraintEnd_toEndOf="@id/tile0"
+            app:layout_constraintStart_toStartOf="@id/tile0"
+            app:layout_constraintTop_toTopOf="@id/tile0" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

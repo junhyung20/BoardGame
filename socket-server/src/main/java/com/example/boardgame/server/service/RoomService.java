@@ -8,7 +8,6 @@ import com.example.boardgame.server.model.Room;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -20,18 +19,20 @@ public class RoomService {
     // Use 1 for local UI testing. Raise to 2 when solo starts should be disallowed.
     public static final int MIN_PLAYERS = 1;
     public static final int MAX_PLAYERS = 4;
+    public static final long WAITING_ROOM_STALE_MILLIS = 5 * 60 * 1000L;
+    public static final long IN_GAME_ROOM_STALE_MILLIS = 60 * 60 * 1000L;
+    public static final long FINISHED_ROOM_STALE_MILLIS = 60 * 1000L;
 
-    public static class MatchResult {
-        private final Room room;
-        private final Player player;
+    public static class CleanupResult {
+        private final List<String> removedRoomCodes = new ArrayList<>();
 
-        public MatchResult(Room room, Player player) {
-            this.room = room;
-            this.player = player;
+        public List<String> getRemovedRoomCodes() {
+            return Collections.unmodifiableList(removedRoomCodes);
         }
 
-        public Room getRoom() { return room; }
-        public Player getPlayer() { return player; }
+        public boolean hasChanges() {
+            return !removedRoomCodes.isEmpty();
+        }
     }
 
     private final Map<String, Room> rooms = new ConcurrentHashMap<>();
@@ -86,21 +87,6 @@ public class RoomService {
         return player;
     }
 
-    public synchronized MatchResult matchmake(String firebaseUid, String nickname) {
-        // 빈자리가 있는 대기방 자동 탐색
-        for (Room room : rooms.values()) {
-            if (isJoinable(room) && !room.hasPassword()) {
-                Player player = joinRoom(room.getCode(), firebaseUid, nickname);
-                return new MatchResult(room, player);
-            }
-        }
-
-        // 빈 방이 없으면 내가 새로 방을 팜
-        Room room = createRoom(firebaseUid, nickname, "");
-        Player player = room.getPlayerList().iterator().next();
-        return new MatchResult(room, player);
-    }
-
     public synchronized void setReady(String roomCode, String playerId, boolean ready) {
         Room room = requireRoom(roomCode);
         Player player = requirePlayer(room, playerId);
@@ -145,6 +131,25 @@ public class RoomService {
         }
     }
 
+    public synchronized CleanupResult cleanupStaleRooms(long nowMillis) {
+        CleanupResult result = new CleanupResult();
+        List<String> roomCodes = new ArrayList<>(rooms.keySet());
+
+        for (String roomCode : roomCodes) {
+            Room room = rooms.get(roomCode);
+            if (room == null) {
+                continue;
+            }
+
+            if (isStale(room, nowMillis)) {
+                rooms.remove(roomCode);
+                result.removedRoomCodes.add(roomCode);
+            }
+        }
+
+        return result;
+    }
+
     public boolean isWaitingOrReady(Room room) {
         return (Room.WAITING.equals(room.getStatus()) || Room.READY.equals(room.getStatus()));
     }
@@ -175,8 +180,15 @@ public class RoomService {
         }
     }
 
-    public Collection<Room> getRooms() {
-        return Collections.unmodifiableCollection(rooms.values());
+    private boolean isStale(Room room, long nowMillis) {
+        long inactiveMillis = Math.max(0L, nowMillis - room.getUpdatedAtMillis());
+        if (Room.FINISHED.equals(room.getStatus())) {
+            return inactiveMillis >= FINISHED_ROOM_STALE_MILLIS;
+        }
+        if (Room.IN_GAME.equals(room.getStatus())) {
+            return inactiveMillis >= IN_GAME_ROOM_STALE_MILLIS;
+        }
+        return inactiveMillis >= WAITING_ROOM_STALE_MILLIS;
     }
 
     private Player createPlayer(String firebaseUid, String nickname) {

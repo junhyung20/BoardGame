@@ -4,60 +4,164 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/waiting_bg"
-    android:padding="24dp">
+    android:paddingHorizontal="32dp"
+    android:paddingVertical="22dp">
 
-    <TextView
-        android:id="@+id/nicknameTitle"
+    <LinearLayout
+        android:id="@+id/loginPanel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/nickname_title"
-        android:textColor="@color/waiting_text_primary"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/nicknameGuide"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/nickname_guide"
-        android:textColor="@color/waiting_text_secondary"
-        android:textSize="15sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/nicknameTitle" />
-
-    <EditText
-        android:id="@+id/nicknameInput"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:layout_marginTop="22dp"
         android:background="@drawable/bg_panel_waiting"
-        android:hint="@string/nickname_hint"
-        android:inputType="textPersonName"
-        android:maxLength="12"
-        android:paddingHorizontal="16dp"
-        android:textColor="@color/waiting_text_primary"
-        android:textColorHint="@color/waiting_text_secondary"
+        android:elevation="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/nicknameGuide" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="680dp">
 
-    <Button
-        android:id="@+id/saveNicknameButton"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_action_primary"
-        android:text="@string/nickname_save_button"
-        android:textAllCaps="false"
-        android:textColor="@android:color/white"
-        android:textSize="17sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/nicknameInput" />
+        <LinearLayout
+            android:layout_width="220dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingEnd="24dp">
+
+            <TextView
+                android:id="@+id/nicknameTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="@string/nickname_title"
+                android:textColor="@color/waiting_text_primary"
+                android:textSize="29sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/nicknameGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:lineSpacingExtra="2dp"
+                android:text="@string/nickname_guide"
+                android:textColor="@color/waiting_text_secondary"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/guestProviderBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_marginTop="22dp"
+                android:background="@drawable/bg_title_nickname_badge"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:paddingHorizontal="12dp"
+                android:text="@string/login_provider_guest"
+                android:textColor="@color/title_badge_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/nicknameInput"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_panel_waiting"
+                android:hint="@string/nickname_hint"
+                android:inputType="textPersonName"
+                android:maxLength="12"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/waiting_text_primary"
+                android:textColorHint="@color/waiting_text_secondary"
+                android:textSize="18sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/saveNicknameButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="14dp"
+                android:elevation="4dp"
+                android:includeFontPadding="false"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:text="@string/nickname_save_button"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/primary"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_login_24"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="22dp"
+                app:iconTint="@android:color/white"
+                app:rippleColor="@color/primary_dark" />
+
+            <LinearLayout
+                android:id="@+id/futureProviderRow"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/googleLoginButton"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:enabled="false"
+                    android:includeFontPadding="false"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:text="@string/login_provider_google"
+                    android:textAllCaps="false"
+                    android:textColor="@color/waiting_text_secondary"
+                    android:textSize="15sp"
+                    app:backgroundTint="#EEF2F7"
+                    app:cornerRadius="8dp"
+                    app:strokeColor="@color/waiting_panel_stroke"
+                    app:strokeWidth="1dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/PlayGamesLoginButton"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:enabled="false"
+                    android:includeFontPadding="false"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:text="@string/login_provider_play_games"
+                    android:textAllCaps="false"
+                    android:textColor="@color/waiting_text_secondary"
+                    android:textSize="15sp"
+                    app:backgroundTint="#EEF2F7"
+                    app:cornerRadius="8dp"
+                    app:strokeColor="@color/waiting_panel_stroke"
+                    app:strokeWidth="1dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/futureProviderHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:text="@string/login_provider_later"
+                android:textColor="@color/waiting_text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

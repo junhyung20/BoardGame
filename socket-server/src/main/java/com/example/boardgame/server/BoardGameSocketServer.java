@@ -1,5 +1,6 @@
 package com.example.boardgame.server;
 
+import com.example.boardgame.server.service.RoomService;
 import com.example.boardgame.socket.protocol.MessageTypes;
 import com.example.boardgame.socket.protocol.SocketMessage;
 import com.example.boardgame.socket.protocol.ErrorCodes;
@@ -9,8 +10,13 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class BoardGameSocketServer extends WebSocketServer {
     private static final int DEFAULT_PORT = 8080;
@@ -19,9 +25,11 @@ public class BoardGameSocketServer extends WebSocketServer {
     private static final String WAN_NETWORK = "WAN";
     private static final String LAN_BIND_HOST = "0.0.0.0";
     private static final String WAN_BIND_HOST = "127.0.0.1";
+    private static final long ROOM_CLEANUP_INTERVAL_SECONDS = 60L;
 
     private final Map<WebSocket, ClientSession> sessions = new ConcurrentHashMap<>();
     private final GameSocketHandler gameSocketHandler;
+    private ScheduledExecutorService roomCleanupExecutor;
 
     public BoardGameSocketServer(int port) {
         this(resolveBindHost(System.getenv()), port, createAuthVerifier(System.getenv()));
@@ -144,6 +152,7 @@ public class BoardGameSocketServer extends WebSocketServer {
         System.out.println("For ngrok WAN testing: ngrok http " + getPort()
                 + " then connect Android to wss://<ngrok-domain>/game");
         setConnectionLostTimeout(30);
+        startRoomCleanup();
     }
 
     void sendToRoom(String roomCode, SocketMessage message) {
@@ -156,8 +165,44 @@ public class BoardGameSocketServer extends WebSocketServer {
 
     void sendToLobby(SocketMessage message) {
         for (ClientSession session : sessions.values()) {
-            if (session.getRoomCode().isEmpty()) {
-                session.send(message);
+            session.send(message);
+        }
+    }
+
+    private void startRoomCleanup() {
+        if (roomCleanupExecutor != null) {
+            return;
+        }
+        roomCleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "boardgame-room-cleanup");
+            thread.setDaemon(true);
+            return thread;
+        });
+        roomCleanupExecutor.scheduleWithFixedDelay(
+                this::cleanupRooms,
+                ROOM_CLEANUP_INTERVAL_SECONDS,
+                ROOM_CLEANUP_INTERVAL_SECONDS,
+                TimeUnit.SECONDS
+        );
+    }
+
+    private void cleanupRooms() {
+        try {
+            clearRemovedRoomBindings(gameSocketHandler.cleanupStaleRooms());
+        } catch (RuntimeException e) {
+            System.err.println("event=room_cleanup_failed cause=" + e.getClass().getSimpleName()
+                    + " message=" + sanitizeLogValue(e.getMessage()));
+        }
+    }
+
+    private void clearRemovedRoomBindings(RoomService.CleanupResult result) {
+        if (result == null || result.getRemovedRoomCodes().isEmpty()) {
+            return;
+        }
+        Set<String> removedRoomCodes = new HashSet<>(result.getRemovedRoomCodes());
+        for (ClientSession session : sessions.values()) {
+            if (removedRoomCodes.contains(session.getRoomCode())) {
+                session.clearRoomBinding();
             }
         }
     }

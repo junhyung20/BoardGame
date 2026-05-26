@@ -25,8 +25,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/title_screen_title"
+        android:includeFontPadding="false"
         android:textColor="@color/title_text_green"
-        android:textSize="44sp"
+        android:textSize="42sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@id/joinGameButton"
         app:layout_constraintEnd_toEndOf="parent"
@@ -34,15 +35,18 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/joinGameButton"
         android:layout_width="0dp"
-        android:layout_height="92dp"
-        android:layout_marginTop="34dp"
+        android:layout_height="84dp"
+        android:layout_marginTop="30dp"
         android:layout_marginEnd="12dp"
-        android:background="@drawable/bg_title_join_button"
+        android:elevation="4dp"
         android:gravity="center"
         android:includeFontPadding="false"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:paddingHorizontal="12dp"
         android:text="@string/title_join_button"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
@@ -52,19 +56,30 @@
         app:autoSizeMinTextSize="15sp"
         app:autoSizeMaxTextSize="24sp"
         app:autoSizeStepGranularity="1sp"
+        app:backgroundTint="@color/title_blue"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_login_24"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconSize="24dp"
+        app:iconTint="@android:color/white"
         app:layout_constraintEnd_toStartOf="@id/optionsButton"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/titleText" />
+        app:layout_constraintTop_toBottomOf="@id/titleText"
+        app:rippleColor="@color/title_blue_pressed" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/optionsButton"
         android:layout_width="0dp"
-        android:layout_height="92dp"
+        android:layout_height="84dp"
         android:layout_marginStart="12dp"
-        android:background="@drawable/bg_title_option_button"
+        android:elevation="3dp"
         android:gravity="center"
         android:includeFontPadding="false"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:paddingHorizontal="12dp"
         android:text="@string/title_options_button"
         android:textAllCaps="false"
         android:textColor="#1E1E1E"
@@ -74,23 +89,33 @@
         app:autoSizeMinTextSize="15sp"
         app:autoSizeMaxTextSize="24sp"
         app:autoSizeStepGranularity="1sp"
+        app:backgroundTint="@color/title_yellow"
+        app:cornerRadius="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/joinGameButton"
-        app:layout_constraintTop_toTopOf="@id/joinGameButton" />
+        app:layout_constraintTop_toTopOf="@id/joinGameButton"
+        app:rippleColor="@color/title_yellow_pressed" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/rulesButton"
         android:layout_width="300dp"
-        android:layout_height="58dp"
+        android:layout_height="52dp"
         android:layout_marginTop="18dp"
-        android:background="@drawable/bg_action_secondary"
+        android:elevation="2dp"
+        android:includeFontPadding="false"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:paddingHorizontal="14dp"
         android:text="@string/title_rules_button"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         android:textSize="20sp"
         android:textStyle="bold"
+        app:backgroundTint="#64748B"
+        app:cornerRadius="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/joinGameButton" />
+        app:layout_constraintTop_toBottomOf="@id/joinGameButton"
+        app:rippleColor="#475569" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="lobby_screen_padding_horizontal">24dp</dimen>
+    <dimen name="lobby_screen_padding_vertical">18dp</dimen>
+    <dimen name="lobby_panel_padding_horizontal">16dp</dimen>
+    <dimen name="lobby_panel_padding_vertical">10dp</dimen>
+    <dimen name="lobby_grid_top_margin">12dp</dimen>
+    <dimen name="lobby_grid_bottom_margin">10dp</dimen>
+    <dimen name="lobby_slot_gap">14dp</dimen>
+    <dimen name="lobby_slot_padding_horizontal">18dp</dimen>
+    <dimen name="lobby_slot_padding_vertical">14dp</dimen>
+    <dimen name="lobby_slot_name_text_size">18sp</dimen>
+    <dimen name="lobby_slot_state_text_size">13sp</dimen>
+    <dimen name="lobby_ready_chip_width">88dp</dimen>
+    <dimen name="lobby_ready_chip_height">36dp</dimen>
+    <dimen name="lobby_ready_chip_margin_start">12dp</dimen>
+    <dimen name="lobby_button_height">54dp</dimen>
+</resources>

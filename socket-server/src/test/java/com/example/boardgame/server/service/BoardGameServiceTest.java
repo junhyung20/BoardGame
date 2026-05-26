@@ -64,6 +64,39 @@ public class BoardGameServiceTest {
     }
 
     @Test
+    public void rollDiceCanUseValidatedClientResult() {
+        RoomService roomService = new RoomService();
+        BoardGameService boardGameService = new BoardGameService();
+        Room room = roomService.createRoom("uid-1", "Player 1");
+        String playerId = room.getPlayerList().iterator().next().getId();
+        roomService.setReady(room.getCode(), playerId, true);
+        boardGameService.startGame(room, RoomService.MIN_PLAYERS);
+
+        int diceRoll = boardGameService.rollDice(room, playerId, 4);
+
+        assertEquals(4, diceRoll);
+        assertEquals(4, room.getGameState().getLastDiceRoll());
+        assertEquals(4, room.getPlayer(playerId).getPosition());
+    }
+
+    @Test
+    public void rollDiceRejectsInvalidClientResult() {
+        RoomService roomService = new RoomService();
+        BoardGameService boardGameService = new BoardGameService();
+        Room room = roomService.createRoom("uid-1", "Player 1");
+        String playerId = room.getPlayerList().iterator().next().getId();
+        roomService.setReady(room.getCode(), playerId, true);
+        boardGameService.startGame(room, RoomService.MIN_PLAYERS);
+
+        try {
+            boardGameService.rollDice(room, playerId, 7);
+            fail("Expected invalid dice result to be rejected");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("Dice roll must be between 1 and 6", expected.getMessage());
+        }
+    }
+
+    @Test
     public void gameCannotStartTwice() {
         RoomService roomService = new RoomService();
         BoardGameService boardGameService = new BoardGameService();
