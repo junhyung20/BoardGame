@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,7 @@ import com.example.boardgame.socket.protocol.PlayerSnapshot;
 import com.example.boardgame.socket.protocol.RoomSnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
@@ -50,6 +52,8 @@ public class BoardActivity extends AppCompatActivity {
     };
     private final ImageView[] playerViews = new ImageView[MAX_PLAYERS];
     private final TextView[] scorePanels = new TextView[MAX_PLAYERS];
+    private final int[] renderedPositions = new int[MAX_PLAYERS];
+    private final int[] movementTargets = new int[MAX_PLAYERS];
 
     private TextView txtDiceVisual;
     private TextView txtTurnInfo;
@@ -106,6 +110,8 @@ public class BoardActivity extends AppCompatActivity {
         playerViews[1] = findViewById(R.id.player2);
         playerViews[2] = findViewById(R.id.player3);
         playerViews[3] = findViewById(R.id.player4);
+        Arrays.fill(renderedPositions, -1);
+        Arrays.fill(movementTargets, -1);
 
         createScorePanels();
         btnDice.setOnClickListener(view -> {
@@ -202,6 +208,10 @@ public class BoardActivity extends AppCompatActivity {
                 PlayerSnapshot player = players.get(i);
                 movePlayerToTile(playerViews[i], player.getPosition(), i);
                 renderScorePanel(scorePanels[i], player, i, isCurrentPlayer(game, player.getId()));
+            } else {
+                playerViews[i].animate().cancel();
+                renderedPositions[i] = -1;
+                movementTargets[i] = -1;
             }
         }
 
@@ -264,18 +274,29 @@ public class BoardActivity extends AppCompatActivity {
     private void createScorePanels() {
         ViewGroup content = findViewById(android.R.id.content);
         ConstraintLayout rootLayout = (ConstraintLayout) content.getChildAt(0);
+        rootLayout.setClipChildren(false);
+        rootLayout.setClipToPadding(false);
 
         for (int i = 0; i < scorePanels.length; i++) {
             TextView panel = new TextView(this);
             panel.setId(View.generateViewId());
             panel.setGravity(Gravity.CENTER);
-            panel.setPadding(dp(8), dp(8), dp(8), dp(8));
-            panel.setTextSize(16);
+            panel.setIncludeFontPadding(false);
+            panel.setMaxLines(2);
+            panel.setPadding(dp(8), dp(6), dp(8), dp(6));
+            panel.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                    getResources().getDimension(R.dimen.board_score_panel_text_size));
             panel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
             panel.setTextColor(i == 3 ? Color.rgb(17, 17, 17) : Color.WHITE);
             panel.setBackground(createScorePanelBackground(i, false));
+            panel.setElevation(dp(14));
+            panel.setTranslationZ(dp(14));
 
-            ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(dp(142), dp(72));
+            ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
+                    getResources().getDimensionPixelSize(R.dimen.board_score_panel_width),
+                    getResources().getDimensionPixelSize(R.dimen.board_score_panel_height)
+            );
+            params.setMargins(dp(2), dp(2), dp(2), dp(2));
             if (i == 0 || i == 2) {
                 params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
             } else {
@@ -288,15 +309,23 @@ public class BoardActivity extends AppCompatActivity {
             }
 
             rootLayout.addView(panel, params);
+            panel.bringToFront();
             scorePanels[i] = panel;
         }
     }
 
     private void renderScorePanel(TextView panel, PlayerSnapshot player, int index, boolean active) {
-        String turnLabel = active ? "  턴" : "";
+        String turnLabel = active ? "  ▶ 턴" : "";
+        panel.bringToFront();
         panel.setBackground(createScorePanelBackground(index, active));
-        panel.setElevation(active ? dp(10) : dp(2));
-        panel.setAlpha(active ? 1.0f : 0.86f);
+        panel.setElevation(active ? dp(22) : dp(14));
+        panel.setTranslationZ(active ? dp(22) : dp(14));
+        panel.setAlpha(active ? 1.0f : 0.92f);
+        panel.animate()
+                .scaleX(active ? 1.04f : 1.0f)
+                .scaleY(active ? 1.04f : 1.0f)
+                .setDuration(160L)
+                .start();
         panel.setText(player.getNickname() + turnLabel + "\n" + player.getScore() + "점");
     }
 
@@ -319,20 +348,105 @@ public class BoardActivity extends AppCompatActivity {
         drawable.setShape(GradientDrawable.RECTANGLE);
         drawable.setColor(fills[safeIndex]);
         drawable.setCornerRadius(dp(8));
-        drawable.setStroke(active ? dp(5) : dp(2), active ? Color.WHITE : borders[safeIndex]);
+        drawable.setStroke(active ? dp(4) : dp(2),
+                active ? Color.rgb(255, 249, 196) : borders[safeIndex]);
         return drawable;
     }
 
     private void movePlayerToTile(View player, int targetTileIndex, int playerIndex) {
         int safeTileIndex = Math.floorMod(targetTileIndex, BOARD_SIZE);
-        View targetTile = findViewById(tileIds[safeTileIndex]);
+        if (movementTargets[playerIndex] == safeTileIndex) {
+            return;
+        }
+
+        int previousTileIndex = renderedPositions[playerIndex];
+        if (previousTileIndex == safeTileIndex) {
+            placePlayerOnTile(player, safeTileIndex, playerIndex, false, null);
+            return;
+        }
+
+        player.bringToFront();
+        player.setElevation(dp(18));
+        player.setTranslationZ(dp(18));
+
+        int forwardSteps = previousTileIndex < 0
+                ? 0
+                : Math.floorMod(safeTileIndex - previousTileIndex, BOARD_SIZE);
+        if (previousTileIndex < 0 || forwardSteps == 0 || forwardSteps > 6) {
+            movementTargets[playerIndex] = -1;
+            renderedPositions[playerIndex] = safeTileIndex;
+            placePlayerOnTile(player, safeTileIndex, playerIndex, false, null);
+            return;
+        }
+
+        movementTargets[playerIndex] = safeTileIndex;
+        hopPlayerThroughTiles(player, previousTileIndex, safeTileIndex, playerIndex, forwardSteps);
+    }
+
+    private void hopPlayerThroughTiles(View player, int currentTileIndex, int targetTileIndex,
+                                       int playerIndex, int remainingSteps) {
+        if (remainingSteps <= 0) {
+            completePlayerMovement(targetTileIndex, playerIndex);
+            return;
+        }
+
+        int nextTileIndex = Math.floorMod(currentTileIndex + 1, BOARD_SIZE);
+        Runnable endAction = remainingSteps == 1
+                ? () -> completePlayerMovement(targetTileIndex, playerIndex)
+                : () -> hopPlayerThroughTiles(player, nextTileIndex, targetTileIndex,
+                        playerIndex, remainingSteps - 1);
+        placePlayerOnTile(player, nextTileIndex, playerIndex, true,
+                endAction);
+    }
+
+    private void completePlayerMovement(int targetTileIndex, int playerIndex) {
+        renderedPositions[playerIndex] = targetTileIndex;
+        movementTargets[playerIndex] = -1;
+    }
+
+    private void placePlayerOnTile(View player, int tileIndex, int playerIndex,
+                                   boolean hop, Runnable endAction) {
+        View targetTile = findViewById(tileIds[tileIndex]);
         targetTile.post(() -> {
-            float offsetX = (playerIndex % 2 == 0 ? -10f : 10f) + playerIndex * 3f;
-            float offsetY = (playerIndex < 2 ? -10f : 10f);
-            float targetX = targetTile.getX() + (targetTile.getWidth() / 2f) - (player.getWidth() / 2f) + offsetX;
-            float targetY = targetTile.getY() + (targetTile.getHeight() / 2f) - (player.getHeight() / 2f) + offsetY;
-            player.animate().x(targetX).y(targetY).setDuration(350L).start();
+            float[] target = playerTargetPosition(player, targetTile, playerIndex);
+            player.animate().cancel();
+            if (!hop) {
+                player.animate()
+                        .x(target[0])
+                        .y(target[1])
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(180L)
+                        .withEndAction(endAction)
+                        .start();
+                return;
+            }
+
+            player.animate()
+                    .x(target[0])
+                    .y(target[1] - dp(12))
+                    .scaleX(1.12f)
+                    .scaleY(1.12f)
+                    .setDuration(120L)
+                    .withEndAction(() -> player.animate()
+                            .y(target[1])
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(105L)
+                            .withEndAction(endAction)
+                            .start())
+                    .start();
         });
+    }
+
+    private float[] playerTargetPosition(View player, View targetTile, int playerIndex) {
+        float offsetX = (playerIndex % 2 == 0 ? -10f : 10f) + playerIndex * 3f;
+        float offsetY = (playerIndex < 2 ? -10f : 10f);
+        float targetX = targetTile.getX() + (targetTile.getWidth() / 2f)
+                - (player.getWidth() / 2f) + offsetX;
+        float targetY = targetTile.getY() + (targetTile.getHeight() / 2f)
+                - (player.getHeight() / 2f) + offsetY;
+        return new float[]{targetX, targetY};
     }
 
     private Intent randomMicroGameIntent() {

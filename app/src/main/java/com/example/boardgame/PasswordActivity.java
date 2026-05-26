@@ -41,7 +41,7 @@ public class PasswordActivity extends AppCompatActivity {
     private final int COLOR_GREEN = Color.parseColor("#4CAF50");
     private final int COLOR_ORANGE = Color.parseColor("#FF9800");
     private final int COLOR_RED = Color.parseColor("#F44336");
-    private final int COLOR_FAIL = Color.parseColor("#B0B0B0");
+    private final int COLOR_FAIL = Color.parseColor("#4B5563");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +61,8 @@ public class PasswordActivity extends AppCompatActivity {
         timerText = findViewById(R.id.timerText);
         clearText = findViewById(R.id.clearText);
         passwordInput = findViewById(R.id.passwordInput);
+        passwordInput.setTextColor(Color.parseColor("#111827"));
+        passwordInput.setHintTextColor(Color.parseColor("#6B7280"));
 
         stageResultStatus = findViewById(R.id.stageResultStatus);
         stageRankText = findViewById(R.id.stageRankText);
@@ -132,6 +134,7 @@ public class PasswordActivity extends AppCompatActivity {
         layoutGame.setVisibility(View.VISIBLE);
         passwordInput.setText("");
         passwordInput.setEnabled(true);
+        passwordInput.setAlpha(1.0f);
         clearText.setText("");
         isCleared = false;
         isGameOver = false;
@@ -230,6 +233,7 @@ public class PasswordActivity extends AppCompatActivity {
         if (allPassed) {
             isCleared = true;
             passwordInput.setEnabled(false);
+            passwordInput.setAlpha(1.0f);
             clearText.setText(currentStage + "스테이지 통과!\n남은 시간을 대기합니다...");
             clearText.setTextColor(Color.parseColor("#1976D2"));
         }

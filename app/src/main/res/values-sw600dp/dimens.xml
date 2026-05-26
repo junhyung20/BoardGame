@@ -15,4 +15,18 @@
     <dimen name="lobby_ready_chip_height">36dp</dimen>
     <dimen name="lobby_ready_chip_margin_start">12dp</dimen>
     <dimen name="lobby_button_height">54dp</dimen>
+    <dimen name="board_screen_padding">14dp</dimen>
+    <dimen name="board_surface_padding">8dp</dimen>
+    <dimen name="board_tile_margin">3dp</dimen>
+    <dimen name="board_tile_text_size">13sp</dimen>
+    <dimen name="board_dice_size">64dp</dimen>
+    <dimen name="board_dice_text_size">30sp</dimen>
+    <dimen name="board_roll_button_width">104dp</dimen>
+    <dimen name="board_roll_button_height">42dp</dimen>
+    <dimen name="board_roll_button_text_size">14sp</dimen>
+    <dimen name="board_turn_text_size">13sp</dimen>
+    <dimen name="board_player_token_size">30dp</dimen>
+    <dimen name="board_score_panel_width">142dp</dimen>
+    <dimen name="board_score_panel_height">72dp</dimen>
+    <dimen name="board_score_panel_text_size">16sp</dimen>
 </resources>

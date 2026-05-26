@@ -27,7 +27,11 @@
     <color name="waiting_panel_stroke">#D8E0EC</color>
     <color name="waiting_text_primary">#1E2633</color>
     <color name="waiting_text_secondary">#5C6A7D</color>
-    <color name="board_green">#2E7D32</color>
-    <color name="tile_beige">#F5F5DC</color>
-    <color name="tile_border">#000000</color>
+    <color name="board_green">#1F6A44</color>
+    <color name="board_surface">#2F855A</color>
+    <color name="board_surface_stroke">#B7E4C7</color>
+    <color name="tile_beige">#FFF7D6</color>
+    <color name="tile_border">#D6B45F</color>
+    <color name="tile_text">#283618</color>
+    <color name="dice_border">#274C3A</color>
 </resources>

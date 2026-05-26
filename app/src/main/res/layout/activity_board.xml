@@ -5,18 +5,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/board_green"
-    android:padding="8dp">
+    android:padding="@dimen/board_screen_padding">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/boardArea"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="@drawable/bg_board_surface"
+        android:elevation="2dp"
+        android:padding="@dimen/board_surface_padding"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_percent="0.64"
+        app:layout_constraintHeight_percent="0.92"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="0.68">
+        app:layout_constraintWidth_percent="0.76">
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/g_v1"
@@ -122,7 +125,7 @@
         <TextView
             android:id="@+id/tile5"
             style="@style/BoardTile"
-            android:text="점수 -"
+            android:text="점수 +"
             app:layout_constraintBottom_toTopOf="@id/g_h2"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/g_v4"
@@ -140,7 +143,7 @@
         <TextView
             android:id="@+id/tile7"
             style="@style/BoardTile"
-            android:text="점수 +"
+            android:text="점수 -"
             app:layout_constraintBottom_toTopOf="@id/g_h4"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/g_v4"
@@ -220,37 +223,59 @@
 
         <TextView
             android:id="@+id/txtDiceVisual"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="@dimen/board_dice_size"
+            android:layout_height="@dimen/board_dice_size"
             android:background="@drawable/dice_shape"
+            android:elevation="4dp"
             android:gravity="center"
+            android:includeFontPadding="false"
             android:text="?"
             android:textColor="#000000"
-            android:textSize="30sp"
+            android:textSize="@dimen/board_dice_text_size"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/btnDice"
-            app:layout_constraintEnd_toEndOf="@id/g_v3"
-            app:layout_constraintStart_toEndOf="@id/g_v2"
+            app:layout_constraintEnd_toEndOf="@id/g_v4"
+            app:layout_constraintStart_toEndOf="@id/g_v1"
             app:layout_constraintTop_toBottomOf="@id/g_h1"
             app:layout_constraintVertical_chainStyle="packed" />
 
         <Button
             android:id="@+id/btnDice"
-            android:layout_width="wrap_content"
-            android:layout_height="44dp"
+            android:layout_width="@dimen/board_roll_button_width"
+            android:layout_height="@dimen/board_roll_button_height"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/bg_board_roll_button"
+            android:backgroundTint="@null"
+            android:elevation="5dp"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:text="주사위"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/board_roll_button_text_size"
+            android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/txtTurnInfo"
-            app:layout_constraintEnd_toEndOf="@id/g_v3"
-            app:layout_constraintStart_toEndOf="@id/g_v2"
+            app:layout_constraintEnd_toEndOf="@id/g_v4"
+            app:layout_constraintStart_toEndOf="@id/g_v1"
             app:layout_constraintTop_toBottomOf="@id/txtDiceVisual" />
 
         <TextView
             android:id="@+id/txtTurnInfo"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
             android:gravity="center"
+            android:includeFontPadding="false"
+            android:maxLines="3"
+            android:ellipsize="end"
             android:textColor="#FFFFFF"
-            android:textSize="14sp"
+            android:textSize="@dimen/board_turn_text_size"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/g_h4"
             app:layout_constraintEnd_toEndOf="@id/g_v4"
@@ -259,8 +284,8 @@
 
         <ImageView
             android:id="@+id/player1"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="@dimen/board_player_token_size"
+            android:layout_height="@dimen/board_player_token_size"
             android:elevation="10dp"
             android:src="@drawable/player_red"
             android:translationX="-8dp"
@@ -272,8 +297,8 @@
 
         <ImageView
             android:id="@+id/player2"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="@dimen/board_player_token_size"
+            android:layout_height="@dimen/board_player_token_size"
             android:elevation="10dp"
             android:src="@drawable/player_blue"
             android:translationX="8dp"
@@ -285,8 +310,8 @@
 
         <ImageView
             android:id="@+id/player3"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="@dimen/board_player_token_size"
+            android:layout_height="@dimen/board_player_token_size"
             android:elevation="10dp"
             android:src="@drawable/player_green"
             android:translationX="-8dp"
@@ -298,8 +323,8 @@
 
         <ImageView
             android:id="@+id/player4"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="@dimen/board_player_token_size"
+            android:layout_height="@dimen/board_player_token_size"
             android:elevation="10dp"
             android:src="@drawable/player_yellow"
             android:translationX="8dp"
