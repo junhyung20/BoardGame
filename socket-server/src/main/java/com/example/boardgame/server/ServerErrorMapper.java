@@ -67,6 +67,9 @@ final class ServerErrorMapper {
         if ("Mini game has already started".equals(message)) {
             return new ServerError(ErrorCodes.MINI_GAME_ALREADY_STARTED, "Mini game has already started");
         }
+        if ("Mini game is still accepting scores".equals(message)) {
+            return new ServerError(ErrorCodes.INVALID_STATE, "Mini game is still accepting scores");
+        }
         if ("Micro game has not started".equals(message)) {
             return new ServerError(ErrorCodes.MICRO_GAME_NOT_STARTED, "Micro game has not started");
         }
